@@ -1,0 +1,74 @@
+{
+  "fixture": "synthetic",
+  "notice": "Names, prices and product codes in this file are invented for an offline demo.",
+  "items": [
+    {
+      "code": "DEMO-COMBO-01",
+      "name": "示例·经典汉堡套餐",
+      "price_cents": 3290,
+      "serves": 1,
+      "role": "combo",
+      "tags": [
+        "burger",
+        "fries",
+        "drink"
+      ]
+    },
+    {
+      "code": "DEMO-COMBO-02",
+      "name": "示例·香辣鸡腿套餐",
+      "price_cents": 2990,
+      "serves": 1,
+      "role": "combo",
+      "tags": [
+        "chicken",
+        "fries",
+        "drink"
+      ]
+    },
+    {
+      "code": "DEMO-SHARE-01",
+      "name": "示例·六块分享小食",
+      "price_cents": 1850,
+      "serves": 2,
+      "role": "side",
+      "tags": [
+        "share",
+        "chicken"
+      ]
+    },
+    {
+      "code": "DEMO-SHARE-02",
+      "name": "示例·双人发版桶",
+      "price_cents": 4990,
+      "serves": 2,
+      "role": "meal",
+      "tags": [
+        "share",
+        "chicken",
+        "drink"
+      ]
+    },
+    {
+      "code": "DEMO-DRINK-01",
+      "name": "示例·无糖饮料",
+      "price_cents": 900,
+      "serves": 1,
+      "role": "drink",
+      "tags": [
+        "drink",
+        "sugar-free"
+      ]
+    },
+    {
+      "code": "DEMO-DESSERT-01",
+      "name": "示例·庆功甜品",
+      "price_cents": 1250,
+      "serves": 1,
+      "role": "dessert",
+      "tags": [
+        "dessert"
+      ]
+    }
+  ]
+}

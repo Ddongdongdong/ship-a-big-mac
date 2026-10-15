@@ -1,159 +1,35 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Ship a Big Mac：把一次软件发版变成一桌由麦当劳 MCP 真实核价的庆功餐。">
-  <meta property="og:title" content="Ship a Big Mac｜发版就吃巨无霸">
-  <meta property="og:description" content="给团队排一桌发版庆功餐，下载专属小票。免费试玩，无需 Token；网页餐品与价格均为虚构示例。">
-  <meta property="og:url" content="https://ddongdongdong.github.io/ship-a-big-mac/">
-  <meta property="og:type" content="website">
-  <title>Ship a Big Mac｜发版就吃巨无霸</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="代码已上线，汉堡安排上。为你的 Release、Hotfix 和 Sprint 生成庆功餐与专属成就卡。">
+<meta property="og:title" content="Ship a Big Mac · 每次交付，都值得庆祝">
+<meta property="og:description" content="选一个庆祝主题，生成你的发版成就卡。免费试玩，无需 Token。">
+<meta property="og:image" content="https://ddongdongdong.github.io/ship-a-big-mac/assets/og-card.png">
+<meta property="og:url" content="https://ddongdongdong.github.io/ship-a-big-mac/">
+<title>Ship a Big Mac · 代码已上线，汉堡安排上</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="nav">
-    <a class="wordmark" href="#top" aria-label="Ship a Big Mac 首页">
-      <span class="mark" aria-hidden="true">M</span>
-      <span>SHIP A BIG MAC</span>
-    </a>
-    <nav aria-label="主导航">
-      <a href="#demo">试玩</a>
-      <a href="#evidence">证据链</a>
-      <a class="github-link" href="https://github.com/Ddongdongdong/ship-a-big-mac">GitHub ↗</a>
-    </nav>
-  </header>
-
-  <main id="top">
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">RELEASE SUCCESSFUL · DINNER PENDING</p>
-        <h1>代码已经 Ship。<br><span>现在 Ship 一顿庆功餐。</span></h1>
-        <p class="lede">读取本地 Git Release 的规模，再用麦当劳中国官方 MCP 的当前门店菜单、优惠与整单核价，给团队一份能执行、能复核、也能分享的庆功方案。</p>
-        <div class="hero-actions">
-          <a class="button primary" href="#demo">30 秒试玩</a>
-          <a class="button secondary" href="https://github.com/Ddongdongdong/ship-a-big-mac">查看源码</a>
-        </div>
-        <p class="privacy-note">源码与提交信息不出本机 · 默认不下单 · Token 不落盘</p>
-      </div>
-      <div class="terminal" aria-label="终端演示">
-        <div class="terminal-bar"><i></i><i></i><i></i><span>release-feast — zsh</span></div>
-        <pre><span class="muted">$</span> ship-a-big-mac analyze --repo .
-
-<span class="yellow">release</span>   v2.4.0
-<span class="yellow">commits</span>   24
-<span class="yellow">makers</span>    5
-<span class="yellow">intensity</span> major
-
-<span class="muted"># 接下来：门店菜单 → 候选 → MCP 核价</span>
-<span class="green">✓</span> celebration context ready</pre>
-      </div>
-    </section>
-
-    <section class="demo-section" id="demo">
-      <div class="section-heading">
-        <p class="eyebrow">ZERO-TOKEN PLAYGROUND</p>
-        <h2>先用合成数据，排一桌发版餐</h2>
-        <p>这里不会连接麦当劳账户。名称与价格均为虚构，只演示产品交互；真实模式必须逐方案调用 <code>calculate-price</code>。</p>
-      </div>
-
-      <div class="demo-grid">
-        <form class="controls" id="planner-form">
-          <fieldset>
-            <legend>选择一组示例 Release</legend>
-            <div class="segmented" role="group" aria-label="发布规模">
-              <button type="button" data-intensity="hotfix" aria-pressed="false">Hotfix</button>
-              <button type="button" data-intensity="regular" aria-pressed="false">Regular</button>
-              <button type="button" class="active" data-intensity="major" aria-pressed="true">Major</button>
-            </div>
-            <p class="control-note">只切换示例工程统计；配餐由人数、预算和策略决定。</p>
-          </fieldset>
-
-          <fieldset>
-            <legend>这顿怎么安排？</legend>
-            <div class="segmented" role="group" aria-label="配餐策略">
-              <button type="button" class="active" data-strategy="均衡" aria-pressed="true">均衡</button>
-              <button type="button" data-strategy="省预算" aria-pressed="false">省预算</button>
-              <button type="button" data-strategy="多样性" aria-pressed="false">多样性</button>
-            </div>
-            <p class="control-note">先保证人人有正餐，再按策略配小食；预算紧时方案可能相同。</p>
-          </fieldset>
-
-          <label for="people">参与人数 <output id="people-value">5 人</output></label>
-          <input id="people" type="range" min="1" max="12" value="5">
-
-          <label for="budget">总预算 <output id="budget-value">¥180</output></label>
-          <input id="budget" type="range" min="60" max="500" step="10" value="180">
-
-          <div class="stat-strip" aria-label="合成 Release 指标">
-            <div><strong id="commit-count">24</strong><span>commits</span></div>
-            <div><strong id="file-count">37</strong><span>files</span></div>
-            <div><strong id="maker-count">5</strong><span>makers</span></div>
-          </div>
-
-          <button class="button primary full" type="submit">重新规划庆功餐</button>
-          <p class="synthetic">SYNTHETIC DEMO · 不代表真实菜单与价格</p>
-        </form>
-
-        <div class="receipt-panel">
-        <article class="receipt" aria-live="polite">
-          <div class="receipt-head">
-            <span>SHIP A BIG MAC</span>
-            <span class="receipt-stamp">DEMO</span>
-          </div>
-          <p>RELEASE <strong>rocket-checkout / v2.4.0</strong></p>
-          <p id="receipt-meta">24 commits · 37 files · 5 makers</p>
-          <div class="receipt-banner"><span id="plan-label">均衡方案</span><span>NOT MCP QUOTED</span></div>
-          <div class="receipt-lines" id="receipt-lines"></div>
-          <div class="receipt-total"><span>TOTAL</span><strong id="receipt-total">¥0.00</strong></div>
-          <div class="receipt-footer">
-            <span id="coverage">覆盖 0 / 5 人</span>
-            <span id="budget-state">预算内</span>
-          </div>
-          <p class="receipt-notice">虚构餐品与价格 · 未经 MCP 核价 · 未下单</p>
-        </article>
-        <div class="share-actions">
-          <button class="button secondary" id="download-receipt" type="button">下载小票 SVG</button>
-          <button class="button secondary" id="copy-share" type="button">复制分享文案</button>
-        </div>
-        <p class="action-status" id="share-status" role="status"></p>
-        <p class="share-note">把发版的快乐分享给队友。觉得有用，<a href="https://github.com/Ddongdongdong/ship-a-big-mac">去 GitHub 点一颗 Star ↗</a></p>
-        </div>
-      </div>
-    </section>
-
-    <section class="evidence" id="evidence">
-      <div class="section-heading">
-        <p class="eyebrow">NO GUESSING</p>
-        <h2>价格不是模型写出来的，是 MCP 算出来的</h2>
-      </div>
-      <ol class="pipeline">
-        <li><span>01</span><h3>本地读 Release</h3><p>只提取提交数、文件数和匿名贡献者数量。</p></li>
-        <li><span>02</span><h3>查询当前门店</h3><p>菜单、商品编码、套餐组成与优惠来自官方 MCP。</p></li>
-        <li><span>03</span><h3>生成候选</h3><p>本地确定性规划器给出均衡、省预算与多样性方案。</p></li>
-        <li><span>04</span><h3>逐单核价</h3><p>每套方案分别调用 calculate-price，失败就淘汰。</p></li>
-        <li><span>05</span><h3>分享小票</h3><p>只保留聚合工程指标与餐品，不带个人信息。</p></li>
-      </ol>
-    </section>
-
-    <section class="cta">
-      <p class="eyebrow">OPEN SOURCE · PYTHON 3.9+</p>
-      <h2>下一次 merge，不要只发一句“辛苦了”。</h2>
-      <div class="command"><code>python -m ship_a_big_mac demo</code><button id="copy-command" type="button">复制完整步骤</button></div>
-      <p class="action-status" id="command-status" role="status"></p>
-      <p class="share-note">复制内容含下载仓库、进入目录与运行 Demo 三步，需要 Git 和 Python 3.9+。</p>
-      <a class="button primary" href="https://github.com/Ddongdongdong/ship-a-big-mac">查看源码，喜欢就点 Star ↗</a>
-    </section>
-    <section class="copy-fallback" id="copy-fallback" hidden>
-      <label for="copy-text">手动复制</label>
-      <textarea id="copy-text" rows="9" readonly></textarea>
-    </section>
-  </main>
-
-  <footer>
-    <span>Ship a Big Mac · 非麦当劳官方产品</span>
-    <span>真实餐品、价格与供应状态以麦当劳官方实时结果为准</span>
-  </footer>
-  <script src="app.js"></script>
-</body>
-</html>
+<header class="nav"><a class="wordmark" href="#top"><span class="brand-icon" aria-hidden="true"><i></i><i></i><i></i></span>SHIP A BIG MAC<span class="edition">THE RELEASE FEAST</span></a><nav aria-label="主导航"><a href="#demo">做一张成就卡</a><a href="#how">怎么用</a><a class="github-link" href="https://github.com/Ddongdongdong/ship-a-big-mac" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span></a></nav></header>
+<main id="top">
+<section class="hero">
+<div class="hero-copy"><p class="eyebrow"><span class="live-dot"></span> YOUR NEXT RELEASE DESERVES A FEAST</p><h1>代码已上线，<br>汉堡<span class="red">安排上。</span></h1><p class="hero-description">发布大版本、修好一个 Bug、终于把构建变绿。<br>每次交付，都值得一顿庆功餐。</p><div class="hero-actions"><a class="button primary" href="#demo">生成我的发版成就卡 <span>↗</span></a><a class="text-link" href="https://github.com/Ddongdongdong/ship-a-big-mac">看看这个开源小作品 →</a></div><div class="hero-note"><span>01 选主题</span><i></i><span>02 配一餐</span><i></i><span>03 分享快乐</span></div></div>
+<div class="hero-visual"><div class="food-disc"></div><span class="orbit-text">GOOD CODE. GREAT COMPANY.</span><img class="hero-food" src="assets/feast.webp" width="600" height="600" alt="巨无霸汉堡、薯条和冰可乐的庆祝主题示意图"><div class="release-tag"><span class="tiny-dot"></span><div><small>RELEASE UNLOCKED</small><strong>v3.0.0 shipped.</strong></div><span class="tag-arrow">↗</span></div><div class="handwritten">这一口，敬你的每次交付。</div><span class="photo-note">餐品主视觉为主题示意 · 非麦当劳官方产品</span></div>
+</section>
+<div class="ribbon"><span>COMMIT YOUR CODE.</span><span class="ribbon-star">✳</span><span>CELEBRATE YOUR PEOPLE.</span><span class="ribbon-star">✳</span><span>SHIP A BIG MAC.</span><span class="ribbon-star">✳</span><span>YOU EARNED THIS.</span></div>
+<section class="demo-section" id="demo"><div class="section-heading"><div><p class="eyebrow">A LITTLE CEREMONY FOR YOUR RELEASE</p><h2>把“辛苦了”，<br class="mobile-break">变成一张成就卡。</h2></div><p>不用注册，不用 Token。<br>选好这次值得庆祝的事，剩下的交给我们。</p></div>
+<div class="demo-grid">
+<form class="controls" id="planner-form">
+<fieldset><legend><span class="step">01</span> 今天为什么庆祝？</legend><div class="scene-grid" role="group" aria-label="庆祝主题"><button type="button" data-scene="major" class="active" aria-pressed="true"><span>↗</span><strong>大版本发布</strong><small>巨无霸胜利宴</small></button><button type="button" data-scene="hotfix" aria-pressed="false"><span>ϟ</span><strong>Hotfix 救火成功</strong><small>紧急回血套餐</small></button><button type="button" data-scene="sprint" aria-pressed="false"><span>☷</span><strong>Sprint 完成</strong><small>团队能量补给</small></button><button type="button" data-scene="comeback" aria-pressed="false"><span>✓</span><strong>构建终于变绿</strong><small>绝地反击庆功餐</small></button></div></fieldset>
+<fieldset><legend><span class="step">02</span> 给这次交付起个名字</legend><label class="sr-only" for="release-version">版本号或庆祝名称</label><input type="text" id="release-version" value="v3.0.0" maxlength="20" placeholder="例如 v3.0.0" autocomplete="off"><p class="control-note">工程统计使用示例数据，主题由你决定。</p></fieldset>
+<fieldset><legend><span class="step">03</span> 这一顿，怎么安排？</legend><label for="people">一起庆祝 <output id="people-value">5 人</output></label><input id="people" type="range" min="1" max="12" value="5"><label for="budget">总预算 <output id="budget-value">¥180</output></label><input id="budget" type="range" min="60" max="500" step="10" value="180"><div class="segmented" role="group" aria-label="配餐策略"><button type="button" data-strategy="均衡" class="active" aria-pressed="true">均衡搭配</button><button type="button" data-strategy="省预算" aria-pressed="false">省预算</button><button type="button" data-strategy="多样性" aria-pressed="false">多点花样</button></div></fieldset>
+<button class="button primary full" type="submit">生成我的成就卡 <span>↗</span></button><p class="demo-disclaimer">离线试玩 · 菜单与金额均为虚构示例<br>真实门店核价，请使用本地 celebrate 命令。</p>
+</form>
+<div class="result-panel" id="result"><div class="result-topline"><span><i class="tiny-dot"></i> YOUR RELEASE ACHIEVEMENT</span><span>分享一点成就感</span></div><div class="card-wrap" id="achievement-card" aria-label="发版成就卡预览"></div><div class="share-actions"><button type="button" class="button primary" id="download-png">保存成就卡 PNG ↓</button><button type="button" class="button secondary" id="download-card">SVG</button><button type="button" class="button secondary" id="copy-share">复制分享文案 ↗</button></div><p id="share-status" class="action-status" role="status"></p><details class="meal-details" open><summary>这顿吃什么 <span id="plan-label">均衡方案</span></summary><div id="receipt-lines" class="receipt-lines"></div><div class="receipt-total"><span>示例合计</span><strong id="receipt-total">¥171.60</strong></div><div class="receipt-footer"><span id="coverage"></span><span id="budget-state"></span></div><button type="button" class="text-link" id="download-receipt">下载配餐小票 SVG ↓</button><p class="control-note">人份是示例份数，不代表个体饱腹或饮食约束。图中餐品不对应方案的精确组成。</p></details><p class="share-note">把这张卡发给队友。喜欢这个创意，<a href="https://github.com/Ddongdongdong/ship-a-big-mac">送它一颗 Star ↗</a></p></div>
+</div></section>
+<section class="how-section" id="how"><div class="section-heading"><div><p class="eyebrow">FROM YOUR TERMINAL TO YOUR TABLE</p><h2>一次发版，一次好好庆祝。</h2></div><p>从试玩到真实菜单，<br>只需要一个本地命令。</p></div><div class="steps-grid"><article><span class="how-number">01 /</span><h3>带上你的 Release</h3><p>在本机读取 Git 统计，选择值得庆祝的场景。两次提交，也值得一顿好饭。</p></article><article><span class="how-number">02 /</span><h3>把预算安排明白</h3><p>确认人数、预算和取餐门店。生成候选庆功餐，通过官方 MCP 逐套核价。</p></article><article><span class="how-number">03 /</span><h3>留下一点成就感</h3><p>保存专属成就卡和配餐小票。分享到群里、Release 页面，或者留给自己。</p></article></div><div class="terminal-row"><div><p class="eyebrow">START A NEW TRADITION</p><h3>下次发版，多一个仪式。</h3><p>Python 3.9+ · 本地源码不上传 · 规划不自动下单</p></div><div class="command-block"><code><span>$</span> ship-a-big-mac celebrate</code><button type="button" id="copy-command" aria-label="复制安装与离线试玩步骤">复制试玩步骤 ⧉</button></div></div><p class="action-status" id="command-status" role="status"></p></section>
+<section class="copy-fallback" id="copy-fallback" hidden><label for="copy-text">浏览器未允许复制，请手动复制：</label><textarea id="copy-text" rows="8" readonly></textarea></section>
+</main><footer><a class="wordmark" href="#top">SHIP A BIG MAC 🍔</a><p>一个程序员送给每次交付的小小仪式。<br>非麦当劳官方产品 · 实际餐品和价格以官方实时结果为准。</p><a href="https://github.com/Ddongdongdong/ship-a-big-mac">Made to be shared. ↗</a></footer>
+<script src="demo-menu.js"></script><script src="card-template.js"></script><script src="planner.js"></script><script src="app.js"></script>
+</body></html>

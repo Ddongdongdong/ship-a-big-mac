@@ -21,6 +21,7 @@ from .render import write_receipt
 from .quote import quote_plan
 from .catalog import CAPABILITY_GROUPS, READ_ONLY_MCP_TOOLS, WRITE_MCP_TOOLS
 from .actions import execute_action, prepare_action, require_success
+from .celebrate import add_celebrate_parser
 
 
 DEMO_MENU = Path(__file__).resolve().parent / "data" / "demo-menu.synthetic.json"
@@ -131,6 +132,7 @@ def _plan_from_dict(raw: dict[str, object]) -> FeastPlan:
         lines=lines,
         quote_total_cents=sum(line.subtotal_cents for line in lines),
         quote_source="MENU_SUM_NOT_MCP_QUOTED",
+        quote_context_digest=str(raw["quote_context_digest"]) if raw.get("quote_context_digest") else None,
     )
 
 
@@ -236,6 +238,7 @@ def cmd_mcp_action(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="ship-a-big-mac")
     sub = parser.add_subparsers(dest="command", required=True)
+    add_celebrate_parser(sub)
 
     demo = sub.add_parser("demo", help="run the zero-token synthetic demo")
     demo.add_argument("--people", type=int, default=5)

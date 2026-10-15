@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 from ship_a_big_mac.mcp import MCPError
 from ship_a_big_mac.planner import FeastPlan, PlanLine
-from ship_a_big_mac.quote import quote_plan
+from ship_a_big_mac.quote import quote_plan, bind_quote_context
 
 
 class QuotePlanTests(unittest.TestCase):
@@ -43,6 +43,42 @@ class QuotePlanTests(unittest.TestCase):
     def test_valid_free_quote_is_accepted(self) -> None:
         self.result["structuredContent"]["data"]["price"] = 0
         self.assertEqual(quote_plan(self.client, self.plan, self.arguments).quote_total_cents, 0)
+
+    def test_context_changes_cannot_reuse_bound_candidate(self):
+        original = deepcopy(self.arguments)
+        original.update(beType=1, orderType=1, reservationDate="2026-10-15 19:00")
+        original["items"][1].update(roundList=[{"round":"1", "comboItemList":[{"code":"default", "quantity":1}]}], couponId="test-coupon")
+        bound = bind_quote_context(self.plan, original)
+        variants = []
+        for key, value in (("storeCode", "new-store"), ("beType", 2), ("orderType", 2), ("reservationDate", "2026-10-16 19:00")):
+            changed = deepcopy(original)
+            changed[key] = value
+            variants.append(changed)
+        changed = deepcopy(original)
+        changed["items"][1]["couponId"] = "other-coupon"
+        variants.append(changed)
+        changed = deepcopy(original)
+        changed["items"][1]["roundList"][0]["comboItemList"][0]["code"] = "other-choice"
+        variants.append(changed)
+        for changed in variants:
+            with self.subTest(changed=changed), self.assertRaisesRegex(ValueError, "context changed"):
+                quote_plan(self.client, bound, changed)
+        self.client.call_tool.assert_not_called()
+        quoted = quote_plan(self.client, bound, original)
+        self.assertEqual(quoted.quote_context_digest, bound.quote_context_digest)
+        self.client.url = "https://different.example"
+        with self.assertRaisesRegex(ValueError, "context changed"):
+            quote_plan(self.client, quoted, original)
+
+    def test_echoed_context_and_combo_options_are_checked(self):
+        self.result["structuredContent"]["data"]["storeCode"] = "different"
+        with self.assertRaisesRegex(MCPError, "context"):
+            quote_plan(self.client, self.plan, self.arguments)
+        del self.result["structuredContent"]["data"]["storeCode"]
+        self.arguments["items"][1]["roundList"] = [{"round":"1", "comboItemList":[{"code":"A","quantity":1}]}]
+        self.result["structuredContent"]["data"]["productList"][0]["roundList"] = [{"round":"1", "comboItemList":[{"code":"B","quantity":1}]}]
+        with self.assertRaisesRegex(MCPError, "options"):
+            quote_plan(self.client, self.plan, self.arguments)
 
     def test_request_mismatch_is_rejected_before_network_call(self) -> None:
         invalid_items = [

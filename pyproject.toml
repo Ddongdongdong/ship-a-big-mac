@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ship-a-big-mac"
-version = "0.3.0"
+version = "0.4.0"
 description = "Turn a Git release into a McDonald's release feast backed by MCP quotes."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -19,4 +19,4 @@ ship-a-big-mac = "ship_a_big_mac.cli:main"
 packages = ["ship_a_big_mac"]
 
 [tool.setuptools.package-data]
-ship_a_big_mac = ["data/*.json"]
+ship_a_big_mac = ["data/*.json", "data/*.png"]

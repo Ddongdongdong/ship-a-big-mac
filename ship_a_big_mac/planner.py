@@ -66,6 +66,7 @@ class FeastPlan:
     quote_total_cents: int
     quote_source: str
     quote_id: str | None = None
+    quote_context_digest: str | None = None
 
     @property
     def total_serves(self) -> int:
@@ -87,6 +88,7 @@ class FeastPlan:
             "quote_total_cents": self.quote_total_cents,
             "quote_source": self.quote_source,
             "quote_id": self.quote_id,
+            "quote_context_digest": self.quote_context_digest,
             "total_serves": self.total_serves,
             "remaining_cents": self.remaining_cents,
             "lines": [
@@ -278,4 +280,5 @@ def apply_mcp_quote(
         quote_total_cents=total_cents,
         quote_source="MCD_MCP_CALCULATE_PRICE",
         quote_id=quote_id,
+        quote_context_digest=plan.quote_context_digest,
     )

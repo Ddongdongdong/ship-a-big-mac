@@ -1,0 +1,31 @@
+[
+  {
+    "people": 4, "budget": 6000,
+    "menu": {"items": [
+      {"code":"A","name":"Three person","price_cents":4000,"serves":3,"role":"meal","tags":["share"]},
+      {"code":"B","name":"Two person","price_cents":3000,"serves":2,"role":"meal","tags":[]}
+    ]},
+    "expected": [{"strategy":"均衡","total":6000,"serves":4,"lines":[["B",2]]}]
+  },
+  {
+    "people": 3, "budget": 5000,
+    "menu": {"items": [
+      {"code":"A","name":"Two person","price_cents":3000,"serves":2,"role":"meal","tags":[]},
+      {"code":"B","name":"Side","price_cents":1,"serves":10,"role":"side","tags":[]},
+      {"code":"C","name":"Unavailable","price_cents":100,"serves":3,"role":"meal","tags":[],"available":false}
+    ]},
+    "expected": []
+  },
+  {
+    "people": 3, "budget": 7000,
+    "menu": {"items": [
+      {"code":"A","name":"Double","price_cents":3000,"serves":2,"role":"meal","tags":["share"]},
+      {"code":"B","name":"Single","price_cents":1800,"serves":1,"role":"combo","tags":["burger"]},
+      {"code":"C","name":"Snack","price_cents":1000,"serves":1,"role":"side","tags":["share"]}
+    ]},
+    "expected": [
+      {"strategy":"均衡","total":5800,"serves":3,"lines":[["A",1],["B",1],["C",1]]},
+      {"strategy":"省预算","total":4800,"serves":3,"lines":[["A",1],["B",1]]}
+    ]
+  }
+]
