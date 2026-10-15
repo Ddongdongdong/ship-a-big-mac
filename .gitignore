@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+dist/
+build/
+*.egg-info/
+.env
+.env.*
+!.env.example
+.mcd/
+release-context.json
+release-plan.json
+release-receipt.svg

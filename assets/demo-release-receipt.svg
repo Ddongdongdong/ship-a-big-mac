@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="546" viewBox="0 0 720 546" role="img" aria-labelledby="title desc">
+  <title id="title">Ship a Big Mac Release Receipt</title>
+  <desc id="desc">A shareable release celebration meal receipt without personal data.</desc>
+  <style>
+    .bg { fill: #fff8e7; } .paper { fill: #fffdf7; stroke: #1f2328; stroke-width: 2; }
+    .brand { font: 700 30px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #da291c; }
+    .meta { font: 16px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #343a40; }
+    .item { font: 17px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #1f2328; }
+    .money { font: 700 17px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #1f2328; }
+    .total { font: 700 23px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #1f2328; }
+    .small { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #57606a; }
+  </style>
+  <rect class="bg" width="100%" height="100%"/>
+  <rect class="paper" x="30" y="24" width="660" height="498" rx="16"/>
+  <text x="60" y="72" class="brand">SHIP A BIG MAC</text>
+  <text x="60" y="103" class="meta">RELEASE  rocket-checkout / v2.4.0</text>
+  <text x="60" y="132" class="meta">24 commits · 37 files · 5 makers</text>
+  <rect x="60" y="154" width="600" height="38" rx="8" fill="#ffdf59"/>
+  <text x="78" y="179" class="meta">均衡 · 5 人 · DEMO · NOT QUOTED</text>
+  <line x1="60" y1="213" x2="660" y2="213" stroke="#8c959f" stroke-dasharray="7 7"/>
+  <text x="66" y="250" class="item">示例·双人发版桶 × 2</text><text x="654" y="250" class="money" text-anchor="end">¥99.80</text><text x="66" y="284" class="item">示例·无糖饮料 × 1</text><text x="654" y="284" class="money" text-anchor="end">¥9.00</text><text x="66" y="318" class="item">示例·经典汉堡套餐 × 1</text><text x="654" y="318" class="money" text-anchor="end">¥32.90</text><text x="66" y="352" class="item">示例·香辣鸡腿套餐 × 1</text><text x="654" y="352" class="money" text-anchor="end">¥29.90</text>
+  <line x1="60" y1="391" x2="660" y2="391" stroke="#8c959f" stroke-dasharray="7 7"/>
+  <text x="60" y="434" class="total">TOTAL</text>
+  <text x="660" y="434" class="total" text-anchor="end">¥171.60</text>
+  <text x="60" y="468" class="small">报价状态：</text>
+  <text x="148" y="468" class="small" fill="#9a6700">DEMO · NOT QUOTED</text>
+  <text x="60" y="494" class="small">不含姓名、邮箱、提交信息、门店、地址或订单号 · 非麦当劳官方产品</text>
+</svg>
