@@ -9,10 +9,35 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from ship_a_big_mac.cli import cmd_mcp_call, cmd_mcp_inspect, cmd_receipt
+from ship_a_big_mac.cli import build_parser, cmd_mcp_action, cmd_mcp_call, cmd_mcp_inspect, cmd_receipt
 
 
 class CLITests(unittest.TestCase):
+    @patch("ship_a_big_mac.cli.MCPClient")
+    def test_action_cli_previews_then_executes_only_confirmed_request(self, client_type):
+        client = client_type.return_value.__enter__.return_value
+        client.list_tools.return_value = [{"name": "auto-bind-coupons", "inputSchema": {"type": "object", "properties": {}}}]
+        client.call_tool.return_value = {"structuredContent": {"success": True, "code": 200, "data": {}}}
+        args = build_parser().parse_args(["mcp-action", "auto-bind-coupons"])
+        with patch("sys.stdout", new_callable=io.StringIO) as output:
+            self.assertEqual(cmd_mcp_action(args), 0)
+        preview, _ = json.JSONDecoder().raw_decode(output.getvalue())
+        self.assertFalse(preview["executed"])
+        client.call_tool.assert_not_called()
+        args.confirm = preview["confirmation_code"]
+        with patch("sys.stdout", new_callable=io.StringIO):
+            self.assertEqual(cmd_mcp_action(args), 0)
+        client.call_tool.assert_called_once_with("auto-bind-coupons", {})
+
+    @patch("ship_a_big_mac.cli.MCPClient")
+    def test_nutrition_shortcut_calls_official_tool(self, client_type):
+        client = client_type.return_value.__enter__.return_value
+        client.call_tool.return_value = {"structuredContent": {"success": True, "code": 200, "data": []}}
+        args = build_parser().parse_args(["nutrition"])
+        with patch("sys.stdout", new_callable=io.StringIO):
+            self.assertEqual(args.func(args), 0)
+        client.call_tool.assert_called_once_with("list-nutrition-foods", {})
+
     def _receipt_inputs(self, directory):
         context = Path(directory) / "context.json"
         plan = Path(directory) / "plan.json"

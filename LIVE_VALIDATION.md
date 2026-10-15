@@ -30,6 +30,10 @@
 
 ## 验证与分享边界
 
+同日扩展能力验收：`list-nutrition-foods`、`campaign-calendar`、`available-coupons`、`query-my-coupons`、`query-my-account`、`mall-points-products`、`order-list`、`delivery-query-addresses`、`query-lottery-info`、`query-my-prizes`、`mall-order-list` 的业务响应均成功。仅记录成功状态，不保存或公开账户返回内容。
+
+实时工具目录与本地 35 个工具目录完全一致。`auto-bind-coupons` 的预览返回 `executed: false`，没有提交领券。7 个写操作已提供调用入口和确认机制、由模拟测试验证，未实际下单、领券、兑换、取消、抽奖、新增地址或预约。
+
 `receipt --quote-arguments <file>` 在同一次运行中调用官方 `calculate-price`，检查业务成功状态、商品编码、数量、整数分金额和预算后，才输出 `MCP VERIFIED`。商品明细行展示菜单参考价，最终金额以 TOTAL 为准。
 
 手填 `--quoted-total` 只显示 `USER REPORTED`。从 JSON 导入的 `quote_source` 不作为核验凭据。小票不是官方订单、付款证明或密码学签名证明。

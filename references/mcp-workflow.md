@@ -13,7 +13,7 @@ Suggested read-only chain:
 5. `query-store-coupons`: retrieve coupons applicable at that store.
 6. `calculate-price`: quote each complete candidate. Treat this response as the sole price authority.
 
-Use no write tool during planning. `auto-bind-coupons`, `create-order`, address creation, cancellation, lottery, points redemption, and party ordering all mutate user state and are outside the default workflow.
+Use no write tool during planning. For requested coupon claims, ordering, address changes, cancellation, lottery, points redemption, or party booking, follow [capabilities.md](capabilities.md) and the `mcp-action` preview/confirmation path.
 
 Keep an evidence note for each final plan:
 

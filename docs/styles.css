@@ -22,6 +22,8 @@ body {
 }
 a { color: inherit; text-decoration: none; }
 button, input { font: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--yellow); outline-offset: 4px; }
+button:disabled { opacity: .5; cursor: not-allowed; }
 
 .nav {
   position: sticky;
@@ -84,6 +86,7 @@ output { color: var(--yellow); }
 .segmented { display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; border-radius: 10px; background: #0e141c; }
 .segmented button { padding: 10px 6px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; }
 .segmented button.active { background: #303c4c; color: white; }
+.control-note { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
 input[type="range"] { width: 100%; margin: 0 0 30px; accent-color: var(--yellow); }
 .stat-strip { display: grid; grid-template-columns: repeat(3, 1fr); margin: 4px 0 28px; border: 1px solid var(--line); border-radius: 12px; }
 .stat-strip div { padding: 16px 8px; text-align: center; }
@@ -104,6 +107,16 @@ input[type="range"] { width: 100%; margin: 0 0 30px; accent-color: var(--yellow)
 .receipt-line span:last-child { font-weight: 800; }
 .receipt-total { display: flex; justify-content: space-between; margin-top: 26px; font-size: 25px; font-weight: 900; }
 .receipt-footer { display: flex; justify-content: space-between; margin-top: 22px; color: #68717b; font-size: 12px; }
+.receipt-panel { min-width: 0; }
+.receipt .receipt-notice { margin: 20px 0 0; color: #a32620; font-size: 12px; line-height: 1.6; }
+.share-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.share-actions .button { flex: 1; }
+.action-status { min-height: 20px; margin: 14px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.share-note { color: var(--muted); font-size: 13px; line-height: 1.7; }
+.share-note a { color: var(--yellow); text-decoration: underline; text-underline-offset: 3px; }
+.copy-fallback { max-width: 900px; margin: 0 auto 60px; padding: 0 28px; }
+.copy-fallback label { display: block; margin-bottom: 12px; }
+.copy-fallback textarea { width: 100%; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); font-family: inherit; font-size: 14px; line-height: 1.7; }
 
 .evidence { padding: 110px 28px; }
 .pipeline { display: grid; grid-template-columns: repeat(5, 1fr); margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }

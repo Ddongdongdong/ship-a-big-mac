@@ -13,6 +13,7 @@ import os
 from typing import Any, Iterable
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from . import __version__
 
 
 class MCPError(RuntimeError):
@@ -147,7 +148,7 @@ class MCPClient(AbstractContextManager["MCPClient"]):
                 "params": {
                     "protocolVersion": "2025-03-26",
                     "capabilities": {},
-                    "clientInfo": {"name": "ship-a-big-mac", "version": "0.2.0"},
+                    "clientInfo": {"name": "ship-a-big-mac", "version": __version__},
                 },
             }
         )

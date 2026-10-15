@@ -19,19 +19,11 @@ from .planner import (
 )
 from .render import write_receipt
 from .quote import quote_plan
+from .catalog import CAPABILITY_GROUPS, READ_ONLY_MCP_TOOLS, WRITE_MCP_TOOLS
+from .actions import execute_action, prepare_action, require_success
 
 
 DEMO_MENU = Path(__file__).resolve().parent / "data" / "demo-menu.synthetic.json"
-READ_ONLY_MCP_TOOLS = frozenset(
-    {
-        "now-time-info",
-        "query-nearby-stores",
-        "query-meals",
-        "query-meal-detail",
-        "query-store-coupons",
-        "calculate-price",
-    }
-)
 
 
 def _load_json(path: str | Path) -> object:
@@ -197,18 +189,46 @@ def cmd_mcp_inspect(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_mcp_call(args: argparse.Namespace) -> int:
-    if args.tool not in READ_ONLY_MCP_TOOLS:
-        allowed = ", ".join(sorted(READ_ONLY_MCP_TOOLS))
-        raise ValueError(f"tool is not allowed in read-only mode: {args.tool}; allowed: {allowed}")
-    raw_arguments = args.arguments
+def _arguments(raw_arguments: str) -> dict[str, object]:
     if raw_arguments.startswith("@"):
         raw_arguments = Path(raw_arguments[1:]).read_text(encoding="utf-8")
     arguments = json.loads(raw_arguments)
     if not isinstance(arguments, dict):
         raise ValueError("MCP arguments must be a JSON object")
+    return arguments
+
+
+def cmd_mcp_call(args: argparse.Namespace) -> int:
+    if args.tool not in READ_ONLY_MCP_TOOLS:
+        raise ValueError(f"tool is not allowed in read-only mode: {args.tool}; use mcp-action to preview supported account changes")
+    arguments = _arguments(args.arguments)
     with MCPClient(url=args.url) as client:
-        result = client.call_tool(args.tool, arguments)
+        result = require_success(client.call_tool(args.tool, arguments), args.tool)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_features(args: argparse.Namespace) -> int:
+    for group, names in CAPABILITY_GROUPS.items():
+        print(f"\n{group}")
+        for name in names:
+            mode = "需确认" if name in WRITE_MCP_TOOLS else "查询"
+            print(f"  [{mode}] {name}")
+    print(f"\n{len(READ_ONLY_MCP_TOOLS)} 个查询工具，{len(WRITE_MCP_TOOLS)} 个需确认操作。参数以 mcp-inspect 实时 Schema 为准。")
+    return 0
+
+
+def cmd_mcp_action(args: argparse.Namespace) -> int:
+    if args.tool not in WRITE_MCP_TOOLS:
+        raise ValueError("unsupported action; run features to view supported tools")
+    arguments = _arguments(args.arguments)
+    with MCPClient(url=args.url) as client:
+        preview = prepare_action(client, args.tool, arguments, args.url)
+        if not args.confirm:
+            print(json.dumps(preview, ensure_ascii=False, indent=2))
+            print("尚未执行。核对操作内容后，使用相同参数和 --confirm <confirmation_code> 执行一次。")
+            return 0
+        result = execute_action(client, preview, args.confirm)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
@@ -259,7 +279,7 @@ def build_parser() -> argparse.ArgumentParser:
     inspect_tool.set_defaults(func=cmd_mcp_inspect)
 
     call = sub.add_parser("mcp-call", help="call an allowlisted read-only MCP tool")
-    call.add_argument("tool", help="one of the six read-only tools used by this project")
+    call.add_argument("tool", help="one of the 28 supported read-only tools; see features")
     call.add_argument(
         "--arguments",
         default="{}",
@@ -267,6 +287,32 @@ def build_parser() -> argparse.ArgumentParser:
     )
     call.add_argument("--url", default="https://mcp.mcd.cn")
     call.set_defaults(func=cmd_mcp_call)
+
+    features = sub.add_parser("features", help="show all supported McDonald's capabilities without a token")
+    features.set_defaults(func=cmd_features)
+
+    action = sub.add_parser("mcp-action", help="preview an account change; requires matching confirmation to execute")
+    action.add_argument("tool", choices=sorted(WRITE_MCP_TOOLS))
+    action.add_argument("--arguments", default="{}", help="JSON object or @local-file.json")
+    action.add_argument("--confirm", help="confirmation_code from the reviewed preview; input or price changes invalidate it")
+    action.add_argument("--url", default="https://mcp.mcd.cn")
+    action.set_defaults(func=cmd_mcp_action)
+
+    shortcuts = {
+        "nutrition": ("list-nutrition-foods", "query official nutrition data"),
+        "calendar": ("campaign-calendar", "query the activity calendar"),
+        "coupons": ("query-my-coupons", "query your current coupons"),
+        "available-coupons": ("available-coupons", "query coupons available to claim"),
+        "points": ("query-my-account", "query points balance and expiry"),
+        "mall": ("mall-points-products", "query points and merchandise products"),
+        "orders": ("order-list", "query recent meal orders"),
+        "addresses": ("delivery-query-addresses", "query delivery addresses"),
+    }
+    for command, (tool, help_text) in shortcuts.items():
+        shortcut = sub.add_parser(command, help=help_text)
+        shortcut.add_argument("--arguments", default="{}", help="optional live tool arguments as JSON or @file")
+        shortcut.add_argument("--url", default="https://mcp.mcd.cn")
+        shortcut.set_defaults(func=cmd_mcp_call, tool=tool)
     return parser
 
 

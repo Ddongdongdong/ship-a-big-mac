@@ -83,6 +83,24 @@ Release: rocket-checkout v2.4.0 · 24 commits
 
 ## 真实工作流
 
+### 其他麦当劳功能
+
+除了发版配餐，也支持官方实时服务器的全部 35 个工具，包含你日常使用的营养、活动、优惠券、积分商城、外送和订单管理。Git 仓库不是这些查询的前提。
+
+```bash
+python -m ship_a_big_mac features           # 28 个查询、7 个需确认操作
+python -m ship_a_big_mac nutrition          # 营养数据
+python -m ship_a_big_mac calendar           # 活动日历
+python -m ship_a_big_mac available-coupons  # 可领取的券
+python -m ship_a_big_mac coupons            # 我的券
+python -m ship_a_big_mac points             # 积分余额
+python -m ship_a_big_mac mall               # 积分商城商品
+python -m ship_a_big_mac orders             # 餐品历史订单
+python -m ship_a_big_mac addresses          # 已有配送地址
+```
+
+领券等账户操作先预览：`python -m ship_a_big_mac mcp-action auto-bind-coupons`；核对后用同样参数和 `--confirm <confirmation_code>` 执行。餐品下单会重新官方核价，价格变化则要求重新核对。完整场景与参数来源见[功能使用指南](references/capabilities.md)。这些功能调用真实账户；网页试玩仍是离线合成演示。
+
 ### 1. 安装
 
 ```bash
@@ -116,7 +134,7 @@ ship-a-big-mac mcp-call now-time-info
 ship-a-big-mac mcp-call query-nearby-stores --arguments @nearby-store-arguments.json
 ```
 
-`mcp-call` 只允许本项目使用的 6 个只读 Tool；`create-order`、领券、抽奖、积分兑换及地址创建等写操作会在本地直接拒绝。调用参数以 `mcp-inspect` 返回的实时 Schema 为准。
+`mcp-call` 允许 28 个查询工具；创建订单、领券、抽奖、积分兑换、地址创建等操作统一走 `mcp-action` 预览与确认。调用参数以 `mcp-inspect` 返回的实时 Schema 为准。
 
 ### 4. 让 Agent 使用 Skill
 
@@ -157,7 +175,7 @@ ship-a-big-mac receipt \
 - Git 只是本地“庆祝规模传感器”，不是点餐命令皮肤。
 - 核心对象是多人 Release Feast，而不是个人购物车。
 - 核心产物是一张能复核报价来源、又不泄露代码和个人信息的 Release 小票。
-- 默认只读、只规划、只核价；当前版本不自动创建订单。
+- 发版规划默认只读、只规划、只核价；用户请求的账户操作另走预览与确认流程。
 
 ## 安全边界
 
@@ -165,7 +183,7 @@ ship-a-big-mac receipt \
 - **价格不猜：** 菜单加总标记为 `MENU_SUM_NOT_MCP_QUOTED`，手工金额标记为 `USER_REPORTED_TOTAL`，均不能生成已验证标记。
 - **Demo 强隔离：** fixture 文件名和输出均标记 `synthetic`，且不联网。
 - **分享不泄密：** SVG 不包含源码、提交标题、作者邮箱、地址、门店、订单号或支付链接。
-- **默认无写操作：** 不领券、不抽奖、不兑换积分、不建地址、不下单、不取消订单。
+- **查询与操作分开：** 查询不会改变账户；领券、抽奖、兑换、地址创建、下单、取消和主题活动预约需使用确认入口。
 
 ## 项目结构
 
@@ -192,6 +210,6 @@ python -m ship_a_big_mac demo --output /tmp/release-receipt.svg
 - 赛事：麦当劳程序员创意开发大赛
 - 官方能力：麦当劳中国 MCP Server
 - 项目 Owner：[@Ddongdongdong](https://github.com/Ddongdongdong)
-- 状态：已完成真实只读菜单与整单核价验收，正在提交官方报名。
+- 状态：已提交[官方报名 Issue #757](https://github.com/M-China/mcd-developer-innovation-challenge/issues/757)，等待系统确认；已完成真实菜单与整单核价验收。
 
 本项目为非官方参赛作品。餐品、价格、优惠与供应状态以麦当劳官方实时结果为准。

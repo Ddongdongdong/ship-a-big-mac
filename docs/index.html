@@ -4,6 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Ship a Big Mac：把一次软件发版变成一桌由麦当劳 MCP 真实核价的庆功餐。">
+  <meta property="og:title" content="Ship a Big Mac｜发版就吃巨无霸">
+  <meta property="og:description" content="给团队排一桌发版庆功餐，下载专属小票。免费试玩，无需 Token；网页餐品与价格均为虚构示例。">
+  <meta property="og:url" content="https://ddongdongdong.github.io/ship-a-big-mac/">
+  <meta property="og:type" content="website">
   <title>Ship a Big Mac｜发版就吃巨无霸</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -56,12 +60,23 @@
       <div class="demo-grid">
         <form class="controls" id="planner-form">
           <fieldset>
-            <legend>这次发布有多大？</legend>
+            <legend>选择一组示例 Release</legend>
             <div class="segmented" role="group" aria-label="发布规模">
               <button type="button" data-intensity="hotfix" aria-pressed="false">Hotfix</button>
               <button type="button" data-intensity="regular" aria-pressed="false">Regular</button>
               <button type="button" class="active" data-intensity="major" aria-pressed="true">Major</button>
             </div>
+            <p class="control-note">只切换示例工程统计；配餐由人数、预算和策略决定。</p>
+          </fieldset>
+
+          <fieldset>
+            <legend>这顿怎么安排？</legend>
+            <div class="segmented" role="group" aria-label="配餐策略">
+              <button type="button" class="active" data-strategy="均衡" aria-pressed="true">均衡</button>
+              <button type="button" data-strategy="省预算" aria-pressed="false">省预算</button>
+              <button type="button" data-strategy="多样性" aria-pressed="false">多样性</button>
+            </div>
+            <p class="control-note">先保证人人有正餐，再按策略配小食；预算紧时方案可能相同。</p>
           </fieldset>
 
           <label for="people">参与人数 <output id="people-value">5 人</output></label>
@@ -80,6 +95,7 @@
           <p class="synthetic">SYNTHETIC DEMO · 不代表真实菜单与价格</p>
         </form>
 
+        <div class="receipt-panel">
         <article class="receipt" aria-live="polite">
           <div class="receipt-head">
             <span>SHIP A BIG MAC</span>
@@ -94,7 +110,15 @@
             <span id="coverage">覆盖 0 / 5 人</span>
             <span id="budget-state">预算内</span>
           </div>
+          <p class="receipt-notice">虚构餐品与价格 · 未经 MCP 核价 · 未下单</p>
         </article>
+        <div class="share-actions">
+          <button class="button secondary" id="download-receipt" type="button">下载小票 SVG</button>
+          <button class="button secondary" id="copy-share" type="button">复制分享文案</button>
+        </div>
+        <p class="action-status" id="share-status" role="status"></p>
+        <p class="share-note">把发版的快乐分享给队友。觉得有用，<a href="https://github.com/Ddongdongdong/ship-a-big-mac">去 GitHub 点一颗 Star ↗</a></p>
+        </div>
       </div>
     </section>
 
@@ -115,8 +139,14 @@
     <section class="cta">
       <p class="eyebrow">OPEN SOURCE · PYTHON 3.9+</p>
       <h2>下一次 merge，不要只发一句“辛苦了”。</h2>
-      <div class="command"><code>python -m ship_a_big_mac demo</code><button id="copy-command" type="button">复制</button></div>
-      <a class="button primary" href="https://github.com/Ddongdongdong/ship-a-big-mac">在 GitHub 查看项目 ↗</a>
+      <div class="command"><code>python -m ship_a_big_mac demo</code><button id="copy-command" type="button">复制完整步骤</button></div>
+      <p class="action-status" id="command-status" role="status"></p>
+      <p class="share-note">复制内容含下载仓库、进入目录与运行 Demo 三步，需要 Git 和 Python 3.9+。</p>
+      <a class="button primary" href="https://github.com/Ddongdongdong/ship-a-big-mac">查看源码，喜欢就点 Star ↗</a>
+    </section>
+    <section class="copy-fallback" id="copy-fallback" hidden>
+      <label for="copy-text">手动复制</label>
+      <textarea id="copy-text" rows="9" readonly></textarea>
     </section>
   </main>
 
