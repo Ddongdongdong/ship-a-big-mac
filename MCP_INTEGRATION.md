@@ -26,6 +26,8 @@ Ship a Big Mac 把一次软件发版转换成团队庆功餐。Git 提交数和�
 
 默认流程不调用 `create-order`、`auto-bind-coupons`、`draw-lottery`、地址创建、订单取消或积分兑换等写工具。
 
+CLI 的 `mcp-call` 也使用固定只读白名单，只允许上表 6 个 Tool。审核者可以通过 `mcp-inspect <tool>` 查看服务器实时 Schema，再通过 `mcp-call <tool> --arguments @file.json` 复核真实返回；任何未列入白名单的 Tool 都会在网络请求前被拒绝。
+
 ## 调用流程
 
 ```text

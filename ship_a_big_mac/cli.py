@@ -20,6 +20,16 @@ from .render import write_receipt
 
 
 DEMO_MENU = Path(__file__).resolve().parent / "data" / "demo-menu.synthetic.json"
+READ_ONLY_MCP_TOOLS = frozenset(
+    {
+        "now-time-info",
+        "query-nearby-stores",
+        "query-meals",
+        "query-meal-detail",
+        "query-store-coupons",
+        "calculate-price",
+    }
+)
 
 
 def _load_json(path: str | Path) -> object:
@@ -167,6 +177,32 @@ def cmd_mcp_tools(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_mcp_inspect(args: argparse.Namespace) -> int:
+    with MCPClient(url=args.url) as client:
+        tools = client.list_tools()
+    selected = next((tool for tool in tools if tool.get("name") == args.tool), None)
+    if selected is None:
+        raise ValueError(f"MCP tool is not available: {args.tool}")
+    print(json.dumps(selected, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_mcp_call(args: argparse.Namespace) -> int:
+    if args.tool not in READ_ONLY_MCP_TOOLS:
+        allowed = ", ".join(sorted(READ_ONLY_MCP_TOOLS))
+        raise ValueError(f"tool is not allowed in read-only mode: {args.tool}; allowed: {allowed}")
+    raw_arguments = args.arguments
+    if raw_arguments.startswith("@"):
+        raw_arguments = Path(raw_arguments[1:]).read_text(encoding="utf-8")
+    arguments = json.loads(raw_arguments)
+    if not isinstance(arguments, dict):
+        raise ValueError("MCP arguments must be a JSON object")
+    with MCPClient(url=args.url) as client:
+        result = client.call_tool(args.tool, arguments)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="ship-a-big-mac")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -204,6 +240,21 @@ def build_parser() -> argparse.ArgumentParser:
     tools.add_argument("--url", default="https://mcp.mcd.cn")
     tools.add_argument("--json", action="store_true")
     tools.set_defaults(func=cmd_mcp_tools)
+
+    inspect_tool = sub.add_parser("mcp-inspect", help="show a live MCP tool schema")
+    inspect_tool.add_argument("tool")
+    inspect_tool.add_argument("--url", default="https://mcp.mcd.cn")
+    inspect_tool.set_defaults(func=cmd_mcp_inspect)
+
+    call = sub.add_parser("mcp-call", help="call an allowlisted read-only MCP tool")
+    call.add_argument("tool", help="one of the six read-only tools used by this project")
+    call.add_argument(
+        "--arguments",
+        default="{}",
+        help="JSON object or @path/to/arguments.json; never include the MCP token",
+    )
+    call.add_argument("--url", default="https://mcp.mcd.cn")
+    call.set_defaults(func=cmd_mcp_call)
     return parser
 
 

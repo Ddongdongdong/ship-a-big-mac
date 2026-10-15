@@ -68,6 +68,12 @@ Release: rocket-checkout v2.4.0 · 24 commits
 
 它不读取源代码内容；默认也不公开贡献者姓名。分享卡只显示提交数、文件数、贡献者数量和餐品。
 
+### 目标用户
+
+- 刚完成版本发布、Hotfix 或 Sprint 的研发团队
+- 需要在固定总预算内安排多人餐的 Tech Lead、项目经理和行政伙伴
+- 想让 Agent 使用实时菜单与官方核价，而不是猜商品和价格的 MCP 开发者
+
 ## 真实工作流
 
 ### 1. 安装
@@ -94,6 +100,16 @@ ship-a-big-mac mcp-tools
 ```
 
 不要把 Token 写进 JSON、README、Issue、截图或 Git 历史。
+
+连接成功后，可以先查看官方实时参数结构，再调用本项目限定的只读工具：
+
+```bash
+ship-a-big-mac mcp-inspect query-nearby-stores
+ship-a-big-mac mcp-call now-time-info
+ship-a-big-mac mcp-call query-nearby-stores --arguments @nearby-store-arguments.json
+```
+
+`mcp-call` 只允许本项目使用的 6 个只读 Tool；`create-order`、领券、抽奖、积分兑换及地址创建等写操作会在本地直接拒绝。调用参数以 `mcp-inspect` 返回的实时 Schema 为准。
 
 ### 4. 让 Agent 使用 Skill
 

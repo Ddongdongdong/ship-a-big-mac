@@ -19,7 +19,7 @@ Convert a software release into a practical celebration meal. Keep Git analysis 
 
 ## Safety and truthfulness
 
-- Treat `fixtures/*.synthetic.json` as invented demonstration data. Never mix it with live results.
+- Treat `ship_a_big_mac/data/*.synthetic.json` as invented demonstration data. Never mix it with live results.
 - Never infer product codes, coupon IDs, prices, availability, store capabilities, or fulfillment codes.
 - Re-run `calculate-price` if the items, store, coupon, fulfillment mode, or appointment time changes.
 - This version plans and verifies a feast but does not call `create-order`. If a host offers ordering separately, obtain explicit user confirmation after showing the final MCP quote.

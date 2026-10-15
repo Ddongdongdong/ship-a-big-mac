@@ -92,7 +92,7 @@ class MCPClient(AbstractContextManager["MCPClient"]):
                 "params": {
                     "protocolVersion": "2025-03-26",
                     "capabilities": {},
-                    "clientInfo": {"name": "ship-a-big-mac", "version": "0.1.0"},
+                    "clientInfo": {"name": "ship-a-big-mac", "version": "0.2.0"},
                 },
             }
         )
