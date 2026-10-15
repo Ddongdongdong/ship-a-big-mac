@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Ship a Big Mac：把一次软件发版变成一桌由麦当劳 MCP 真实核价的庆功餐。">
+  <title>Ship a Big Mac｜发版就吃巨无霸</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="nav">
+    <a class="wordmark" href="#top" aria-label="Ship a Big Mac 首页">
+      <span class="mark" aria-hidden="true">M</span>
+      <span>SHIP A BIG MAC</span>
+    </a>
+    <nav aria-label="主导航">
+      <a href="#demo">试玩</a>
+      <a href="#evidence">证据链</a>
+      <a class="github-link" href="https://github.com/Ddongdongdong/ship-a-big-mac">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">RELEASE SUCCESSFUL · DINNER PENDING</p>
+        <h1>代码已经 Ship。<br><span>现在 Ship 一顿庆功餐。</span></h1>
+        <p class="lede">读取本地 Git Release 的规模，再用麦当劳中国官方 MCP 的当前门店菜单、优惠与整单核价，给团队一份能执行、能复核、也能分享的庆功方案。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#demo">30 秒试玩</a>
+          <a class="button secondary" href="https://github.com/Ddongdongdong/ship-a-big-mac">查看源码</a>
+        </div>
+        <p class="privacy-note">源码与提交信息不出本机 · 默认不下单 · Token 不落盘</p>
+      </div>
+      <div class="terminal" aria-label="终端演示">
+        <div class="terminal-bar"><i></i><i></i><i></i><span>release-feast — zsh</span></div>
+        <pre><span class="muted">$</span> ship-a-big-mac analyze --repo .
+
+<span class="yellow">release</span>   v2.4.0
+<span class="yellow">commits</span>   24
+<span class="yellow">makers</span>    5
+<span class="yellow">intensity</span> major
+
+<span class="muted"># 接下来：门店菜单 → 候选 → MCP 核价</span>
+<span class="green">✓</span> celebration context ready</pre>
+      </div>
+    </section>
+
+    <section class="demo-section" id="demo">
+      <div class="section-heading">
+        <p class="eyebrow">ZERO-TOKEN PLAYGROUND</p>
+        <h2>先用合成数据，排一桌发版餐</h2>
+        <p>这里不会连接麦当劳账户。名称与价格均为虚构，只演示产品交互；真实模式必须逐方案调用 <code>calculate-price</code>。</p>
+      </div>
+
+      <div class="demo-grid">
+        <form class="controls" id="planner-form">
+          <fieldset>
+            <legend>这次发布有多大？</legend>
+            <div class="segmented" role="group" aria-label="发布规模">
+              <button type="button" data-intensity="hotfix" aria-pressed="false">Hotfix</button>
+              <button type="button" data-intensity="regular" aria-pressed="false">Regular</button>
+              <button type="button" class="active" data-intensity="major" aria-pressed="true">Major</button>
+            </div>
+          </fieldset>
+
+          <label for="people">参与人数 <output id="people-value">5 人</output></label>
+          <input id="people" type="range" min="1" max="12" value="5">
+
+          <label for="budget">总预算 <output id="budget-value">¥180</output></label>
+          <input id="budget" type="range" min="60" max="500" step="10" value="180">
+
+          <div class="stat-strip" aria-label="合成 Release 指标">
+            <div><strong id="commit-count">24</strong><span>commits</span></div>
+            <div><strong id="file-count">37</strong><span>files</span></div>
+            <div><strong id="maker-count">5</strong><span>makers</span></div>
+          </div>
+
+          <button class="button primary full" type="submit">重新规划庆功餐</button>
+          <p class="synthetic">SYNTHETIC DEMO · 不代表真实菜单与价格</p>
+        </form>
+
+        <article class="receipt" aria-live="polite">
+          <div class="receipt-head">
+            <span>SHIP A BIG MAC</span>
+            <span class="receipt-stamp">DEMO</span>
+          </div>
+          <p>RELEASE <strong>rocket-checkout / v2.4.0</strong></p>
+          <p id="receipt-meta">24 commits · 37 files · 5 makers</p>
+          <div class="receipt-banner"><span id="plan-label">均衡方案</span><span>NOT MCP QUOTED</span></div>
+          <div class="receipt-lines" id="receipt-lines"></div>
+          <div class="receipt-total"><span>TOTAL</span><strong id="receipt-total">¥0.00</strong></div>
+          <div class="receipt-footer">
+            <span id="coverage">覆盖 0 / 5 人</span>
+            <span id="budget-state">预算内</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="evidence" id="evidence">
+      <div class="section-heading">
+        <p class="eyebrow">NO GUESSING</p>
+        <h2>价格不是模型写出来的，是 MCP 算出来的</h2>
+      </div>
+      <ol class="pipeline">
+        <li><span>01</span><h3>本地读 Release</h3><p>只提取提交数、文件数和匿名贡献者数量。</p></li>
+        <li><span>02</span><h3>查询当前门店</h3><p>菜单、商品编码、套餐组成与优惠来自官方 MCP。</p></li>
+        <li><span>03</span><h3>生成候选</h3><p>本地确定性规划器给出均衡、省预算与多样性方案。</p></li>
+        <li><span>04</span><h3>逐单核价</h3><p>每套方案分别调用 calculate-price，失败就淘汰。</p></li>
+        <li><span>05</span><h3>分享小票</h3><p>只保留聚合工程指标与餐品，不带个人信息。</p></li>
+      </ol>
+    </section>
+
+    <section class="cta">
+      <p class="eyebrow">OPEN SOURCE · PYTHON 3.9+</p>
+      <h2>下一次 merge，不要只发一句“辛苦了”。</h2>
+      <div class="command"><code>python -m ship_a_big_mac demo</code><button id="copy-command" type="button">复制</button></div>
+      <a class="button primary" href="https://github.com/Ddongdongdong/ship-a-big-mac">在 GitHub 查看项目 ↗</a>
+    </section>
+  </main>
+
+  <footer>
+    <span>Ship a Big Mac · 非麦当劳官方产品</span>
+    <span>真实餐品、价格与供应状态以麦当劳官方实时结果为准</span>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>
