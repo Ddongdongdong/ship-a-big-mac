@@ -9,19 +9,64 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from ship_a_big_mac.cli import cmd_mcp_call, cmd_mcp_inspect
+from ship_a_big_mac.cli import cmd_mcp_call, cmd_mcp_inspect, cmd_receipt
 
 
 class CLITests(unittest.TestCase):
+    def _receipt_inputs(self, directory):
+        context = Path(directory) / "context.json"
+        plan = Path(directory) / "plan.json"
+        context.write_text(json.dumps({"repository": "test", "branch": "main", "version": "v1", "commit_count": 1, "contributor_count": 1, "files_changed": 1, "insertions": 1, "deletions": 0, "intensity": "hotfix", "window_days": 14}), encoding="utf-8")
+        plan.write_text(json.dumps({"people": 1, "budget_cents": 4000, "quote_source": "MCD_MCP_CALCULATE_PRICE", "quote_total_cents": 1, "lines": [{"code": "A", "name": "Test combo", "quantity": 1, "unit_price_cents": 3000, "serves": 1, "role": "combo"}]}), encoding="utf-8")
+        return Namespace(context=str(context), plan=str(plan), index=0, quoted_total=None, quote_id=None, quote_arguments=None, output=str(Path(directory) / "receipt.svg"))
+
+    def test_saved_verification_badge_is_not_trusted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self._receipt_inputs(directory)
+            with patch("sys.stdout", new_callable=io.StringIO):
+                cmd_receipt(args)
+            svg = Path(args.output).read_text(encoding="utf-8")
+            self.assertNotIn("MCP VERIFIED", svg)
+            self.assertIn("¥30.00", svg)
+
+    def test_manual_total_is_labeled_user_reported(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self._receipt_inputs(directory)
+            args.quoted_total = "28.50"
+            with patch("sys.stdout", new_callable=io.StringIO):
+                cmd_receipt(args)
+            svg = Path(args.output).read_text(encoding="utf-8")
+            self.assertIn("USER REPORTED", svg)
+            self.assertNotIn("MCP VERIFIED", svg)
+
+    @patch("ship_a_big_mac.cli.MCPClient")
+    def test_receipt_verifies_live_quote_before_rendering(self, client_type):
+        client = client_type.return_value.__enter__.return_value
+        client.call_tool.return_value = {"structuredContent": {"success": True, "code": 200, "data": {"price": 2850, "productList": [{"productCode": "A", "quantity": 1}]}}}
+        with tempfile.TemporaryDirectory() as directory:
+            args = self._receipt_inputs(directory)
+            arguments = {"storeCode": "test", "beType": 1, "orderType": 1, "items": [{"productCode": "A", "quantity": 1}]}
+            path = Path(directory) / "arguments.json"
+            path.write_text(json.dumps(arguments), encoding="utf-8")
+            args.quote_arguments = str(path)
+            with patch("sys.stdout", new_callable=io.StringIO):
+                cmd_receipt(args)
+            client.call_tool.assert_called_once_with("calculate-price", arguments)
+            svg = Path(args.output).read_text(encoding="utf-8")
+            self.assertIn("MCP VERIFIED", svg)
+            self.assertIn("¥28.50", svg)
+
     def test_demo_generates_svg_without_token(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "receipt.svg"
-            env = {"PATH": os.environ.get("PATH", "")}
+            env = dict(os.environ)
+            env.pop("MCD_MCP_TOKEN", None)
             process = subprocess.run(
                 [sys.executable, "-m", "ship_a_big_mac", "demo", "--output", str(output)],
                 check=False,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
                 env=env,
             )
             self.assertEqual(process.returncode, 0, process.stderr)

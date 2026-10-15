@@ -18,6 +18,7 @@
   <rect x="60" y="154" width="600" height="38" rx="8" fill="#ffdf59"/>
   <text x="78" y="179" class="meta">均衡 · 5 人 · DEMO · NOT QUOTED</text>
   <line x1="60" y1="213" x2="660" y2="213" stroke="#8c959f" stroke-dasharray="7 7"/>
+  <text x="654" y="208" class="small" text-anchor="end">各项为菜单参考价 · 总额尚未实时核验</text>
   <text x="66" y="250" class="item">示例·双人发版桶 × 2</text><text x="654" y="250" class="money" text-anchor="end">¥99.80</text><text x="66" y="284" class="item">示例·无糖饮料 × 1</text><text x="654" y="284" class="money" text-anchor="end">¥9.00</text><text x="66" y="318" class="item">示例·经典汉堡套餐 × 1</text><text x="654" y="318" class="money" text-anchor="end">¥32.90</text><text x="66" y="352" class="item">示例·香辣鸡腿套餐 × 1</text><text x="654" y="352" class="money" text-anchor="end">¥29.90</text>
   <line x1="60" y1="391" x2="660" y2="391" stroke="#8c959f" stroke-dasharray="7 7"/>
   <text x="60" y="434" class="total">TOTAL</text>

@@ -96,12 +96,39 @@ class FeastPlan:
         }
 
 
+def _minimum_cover(
+    items: list[MenuItem], people: int
+) -> tuple[list[int], list[MenuItem | None]]:
+    """Find exact menu costs for covering each remaining number of people.
+
+    Quantities are unlimited, and a final item may serve more people than remain.
+    Sides and drinks must be excluded by the caller.
+    """
+    costs = [0]
+    choices: list[MenuItem | None] = [None]
+    for remaining in range(1, people + 1):
+        chosen = min(
+            items,
+            key=lambda item: (
+                item.price_cents + costs[max(0, remaining - item.serves)],
+                item.price_cents,
+                item.name,
+                item.code,
+            ),
+        )
+        costs.append(chosen.price_cents + costs[max(0, remaining - chosen.serves)])
+        choices.append(chosen)
+    return costs, choices
+
+
 def _pick(
     items: list[MenuItem],
     *,
     people: int,
     budget_cents: int,
     strategy: str,
+    minimum_costs: list[int],
+    minimum_choices: list[MenuItem | None],
 ) -> FeastPlan:
     counts: dict[MenuItem, int] = {}
     coverage_items = [item for item in items if item.role in {"meal", "combo"}]
@@ -112,26 +139,31 @@ def _pick(
     used_roles: set[str] = set()
     used_tags: set[str] = set()
     used_names: set[str] = set()
-    max_units = people + 3
-
-    while covered < people and sum(counts.values()) < max_units:
-        affordable = [item for item in coverage_items if spent + item.price_cents <= budget_cents]
-        if not affordable:
-            break
+    while covered < people:
+        # Reserve enough budget to finish the meal before rewarding variety.
+        # Looking only at this item's price can leave a feasible plan stranded.
+        affordable = [
+            item
+            for item in coverage_items
+            if spent + item.price_cents
+            + minimum_costs[max(0, people - covered - item.serves)] <= budget_cents
+        ]
 
         def score(item: MenuItem) -> tuple[float, float, str]:
             efficiency = item.serves / item.price_cents
             novelty = (item.role not in used_roles) + (item.name not in used_names)
-            if strategy == "省预算":
-                primary = efficiency * 100_000
-            elif strategy == "多样性":
+            if strategy == "多样性":
                 primary = novelty * 100 + len(set(item.tags) - used_tags) * 10 + efficiency
             else:
                 role_bonus = 40 if item.role in {"combo", "meal"} else 10
                 primary = efficiency * 50_000 + novelty * 20 + role_bonus
             return primary, -item.price_cents, item.name
 
-        chosen = max(affordable, key=score)
+        if strategy == "省预算":
+            chosen = minimum_choices[people - covered]
+            assert chosen is not None
+        else:
+            chosen = max(affordable, key=score)
         counts[chosen] = counts.get(chosen, 0) + 1
         covered += chosen.serves
         spent += chosen.price_cents
@@ -191,8 +223,26 @@ def plan_feasts(
     items = [item for item in menu if item.available and item.price_cents > 0]
     if not items:
         raise ValueError("no available menu items")
+    coverage_items = [item for item in items if item.role in {"meal", "combo"}]
+    if not coverage_items:
+        raise ValueError("menu has no meal or combo items that can cover a person")
+    if any(item.serves < 1 for item in coverage_items):
+        raise ValueError("meal and combo items must serve at least one person")
+    minimum_costs, minimum_choices = _minimum_cover(coverage_items, people)
+    if minimum_costs[people] > budget_cents:
+        raise ValueError(
+            f"budget cannot cover {people} people; "
+            f"minimum menu total is {format_yuan(minimum_costs[people])}"
+        )
     candidates = [
-        _pick(items, people=people, budget_cents=budget_cents, strategy=strategy)
+        _pick(
+            items,
+            people=people,
+            budget_cents=budget_cents,
+            strategy=strategy,
+            minimum_costs=minimum_costs,
+            minimum_choices=minimum_choices,
+        )
         for strategy in ("均衡", "省预算", "多样性")
     ]
     unique: list[FeastPlan] = []
@@ -204,10 +254,6 @@ def plan_feasts(
         if signature not in seen:
             seen.add(signature)
             unique.append(plan)
-    if not unique:
-        cheapest = min(item.price_cents / item.serves for item in items)
-        minimum = int(cheapest * people)
-        raise ValueError(f"budget cannot cover {people} people; estimated minimum is {format_yuan(minimum)}")
     return unique
 
 
@@ -219,6 +265,11 @@ def apply_mcp_quote(
 ) -> FeastPlan:
     if total_cents < 0:
         raise ValueError("quoted total cannot be negative")
+    if total_cents > plan.budget_cents:
+        raise ValueError(
+            f"quoted total {format_yuan(total_cents)} exceeds budget "
+            f"{format_yuan(plan.budget_cents)}; revise the plan and request a new quote"
+        )
     return FeastPlan(
         strategy=plan.strategy,
         people=plan.people,

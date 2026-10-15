@@ -15,13 +15,14 @@ Convert a software release into a practical celebration meal. Keep Git analysis 
 4. Resolve a store, fetch its currently sellable menu, and normalize candidate items into the format in [references/normalized-data.md](references/normalized-data.md).
 5. Generate up to three local candidates with `python -m ship_a_big_mac plan`. Submit every candidate to `calculate-price`; discard candidates the MCP cannot quote.
 6. Present the verified total, store, fulfillment mode, items, savings reported by MCP, assumptions, and trade-offs. Never describe a menu-price sum as a quote.
-7. After the user selects a plan, render the receipt with `python -m ship_a_big_mac receipt --quoted-total <yuan>`. The receipt must not contain contributor names, commit subjects, emails, addresses, order IDs, or tokens.
+7. After the user selects a plan, render the receipt with `python -m ship_a_big_mac receipt --context <context.json> --plan <plans.json> --index <n> --quote-arguments <arguments.json>`. This re-quotes the exact selected products and quantities, checks the live result and budget, and only then marks it MCP VERIFIED. A manually entered `--quoted-total` is USER REPORTED. Keep argument files under local `.mcd/`; the receipt must not contain contributor names, commit subjects, emails, addresses, order IDs, or tokens.
 
 ## Safety and truthfulness
 
 - Treat `ship_a_big_mac/data/*.synthetic.json` as invented demonstration data. Never mix it with live results.
 - Never infer product codes, coupon IDs, prices, availability, store capabilities, or fulfillment codes.
 - Re-run `calculate-price` if the items, store, coupon, fulfillment mode, or appointment time changes.
+- Reject quotes over the user's budget and revise the candidate; menu discounts may not apply to the whole order. Describe the budget strategy as minimum menu cost within the selected menu, not a global coupon optimum.
 - This version plans and verifies a feast but does not call `create-order`. If a host offers ordering separately, obtain explicit user confirmation after showing the final MCP quote.
 - Do not place MCP tokens in arguments, generated files, logs, screenshots, or repository content.
 - If a hard constraint cannot be verified, label it unresolved rather than silently relaxing it.

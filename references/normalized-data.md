@@ -21,6 +21,6 @@ The local planner intentionally does not parse arbitrary live MCP payloads. The 
 }
 ```
 
-`price_cents` is only a candidate-generation hint. The final total must come from `calculate-price` and be supplied to the receipt command with `--quoted-total`.
+`price_cents` is only a candidate-generation hint. The final total must come from `calculate-price`. Pass the selected plan and its exact live request arguments to `receipt --quote-arguments <file>` so the command obtains and checks a fresh quote before rendering. Manual `--quoted-total` values only receive a USER REPORTED label. Keep account-specific arguments in ignored `.mcd/` files.
 
-The Git analyzer writes a release context JSON. By default contributor identities are salted-looking local labels derived from hashes; the shareable SVG only displays the contributor count.
+The Git analyzer writes a release context JSON. By default contributor identities are local labels derived from hashes (not salted or intended as irreversible anonymization); the shareable SVG only displays the contributor count.

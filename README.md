@@ -51,8 +51,9 @@ Release: rocket-checkout v2.4.0 · 24 commits
   示例·香辣鸡腿套餐 × 1     ¥29.90
   报价状态: MENU_SUM_NOT_MCP_QUOTED
 
-[省预算] 6 人份 · ¥149.70
-  示例·双人发版桶 × 3      ¥149.70
+[省预算] 5 人份 · ¥129.70
+  示例·双人发版桶 × 2       ¥99.80
+  示例·香辣鸡腿套餐 × 1     ¥29.90
   报价状态: MENU_SUM_NOT_MCP_QUOTED
 ```
 
@@ -137,27 +138,31 @@ now-time-info
 
 ### 5. 生成 MCP VERIFIED 小票
 
-Agent 将 MCP 核价金额写入分享卡：
+Agent 根据实时 Schema 准备所选方案的核价参数文件；商品编码、数量与套餐选项必须来自真实菜单。生成小票时再次联网核价：
 
 ```bash
 ship-a-big-mac receipt \
   --context release-context.json \
   --plan release-plan.json \
-  --quoted-total 168.50 \
+  --quote-arguments .mcd/price-arguments.json \
   --output release-receipt.svg
 ```
+
+程序校验官方业务返回成功、商品与数量一致、金额未超预算后，才显示 `MCP VERIFIED`。手工输入 `--quoted-total` 仅显示 `USER REPORTED`；从 JSON 导入的验证标签不会被信任。参数文件可能含账户优惠信息，请留在本地 `.mcd/` 目录。
+
+已完成一次真实只读验收：5 人、180 元预算，两套候选核价为 171 元和 167.50 元。详见[实测记录](LIVE_VALIDATION.md)，价格仅代表该次测试。
 
 ## 为什么不是另一个 Git 点餐工具
 
 - Git 只是本地“庆祝规模传感器”，不是点餐命令皮肤。
 - 核心对象是多人 Release Feast，而不是个人购物车。
 - 核心产物是一张能复核报价来源、又不泄露代码和个人信息的 Release 小票。
-- 默认只读、只规划、只核价；v0.1 不自动创建订单。
+- 默认只读、只规划、只核价；当前版本不自动创建订单。
 
 ## 安全边界
 
 - **凭据不落盘：** Token 仅从 `MCD_MCP_TOKEN` 读取。
-- **价格不猜：** 未经过 `calculate-price` 的结果固定标记为 `MENU_SUM_NOT_MCP_QUOTED`。
+- **价格不猜：** 菜单加总标记为 `MENU_SUM_NOT_MCP_QUOTED`，手工金额标记为 `USER_REPORTED_TOTAL`，均不能生成已验证标记。
 - **Demo 强隔离：** fixture 文件名和输出均标记 `synthetic`，且不联网。
 - **分享不泄密：** SVG 不包含源码、提交标题、作者邮箱、地址、门店、订单号或支付链接。
 - **默认无写操作：** 不领券、不抽奖、不兑换积分、不建地址、不下单、不取消订单。
@@ -187,6 +192,6 @@ python -m ship_a_big_mac demo --output /tmp/release-receipt.svg
 - 赛事：麦当劳程序员创意开发大赛
 - 官方能力：麦当劳中国 MCP Server
 - 项目 Owner：[@Ddongdongdong](https://github.com/Ddongdongdong)
-- 状态：开发中；完成真实只读菜单与核价验收后再提交报名 Issue
+- 状态：已完成真实只读菜单与整单核价验收，正在提交官方报名。
 
 本项目为非官方参赛作品。餐品、价格、优惠与供应状态以麦当劳官方实时结果为准。

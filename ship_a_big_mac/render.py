@@ -13,8 +13,12 @@ def render_receipt_svg(context: ReleaseContext, plan: FeastPlan) -> str:
     width = 720
     row_height = 34
     height = 410 + row_height * len(plan.lines)
-    status = "MCP VERIFIED" if plan.quote_source == "MCD_MCP_CALCULATE_PRICE" else "DEMO · NOT QUOTED"
+    status = {
+        "MCD_MCP_CALCULATE_PRICE": "MCP VERIFIED",
+        "USER_REPORTED_TOTAL": "USER REPORTED",
+    }.get(plan.quote_source, "DEMO · NOT QUOTED")
     status_color = "#16803a" if status == "MCP VERIFIED" else "#9a6700"
+    line_note = "各项为菜单参考价 · 实时核价见 TOTAL" if status == "MCP VERIFIED" else "各项为菜单参考价 · 总额尚未实时核验"
     rows: list[str] = []
     y = 250
     for line in plan.lines:
@@ -43,6 +47,7 @@ def render_receipt_svg(context: ReleaseContext, plan: FeastPlan) -> str:
   <rect x="60" y="154" width="600" height="38" rx="8" fill="#ffdf59"/>
   <text x="78" y="179" class="meta">{escape(plan.strategy)} · {plan.people} 人 · {escape(status)}</text>
   <line x1="60" y1="213" x2="660" y2="213" stroke="#8c959f" stroke-dasharray="7 7"/>
+  <text x="654" y="208" class="small" text-anchor="end">{line_note}</text>
   {''.join(rows)}
   <line x1="60" y1="{y + 5}" x2="660" y2="{y + 5}" stroke="#8c959f" stroke-dasharray="7 7"/>
   <text x="60" y="{y + 48}" class="total">TOTAL</text>
@@ -55,5 +60,5 @@ def render_receipt_svg(context: ReleaseContext, plan: FeastPlan) -> str:
 
 def write_receipt(path: str | Path, context: ReleaseContext, plan: FeastPlan) -> Path:
     output = Path(path).expanduser()
-    output.write_text(render_receipt_svg(context, plan), encoding="utf-8")
+    output.write_bytes(render_receipt_svg(context, plan).encode("utf-8"))
     return output.resolve()

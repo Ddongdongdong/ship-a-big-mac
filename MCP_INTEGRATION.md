@@ -52,7 +52,7 @@ calculate-price
 
 ## 价格纪律
 
-本地菜单价加总只标记为 `MENU_SUM_NOT_MCP_QUOTED`，不能对用户宣称为实付价。只有 `calculate-price` 成功返回后，输出才标记为 `MCD_MCP_CALCULATE_PRICE`。商品、门店、优惠券、履约方式或预约时间任一变化，都必须重新核价。
+本地菜单价加总只标记为 `MENU_SUM_NOT_MCP_QUOTED`，不能对用户宣称为实付价。`receipt --quote-arguments` 在当前运行中调用 `calculate-price`，检查业务成功、商品数量一致、整数分金额与预算后，才标记为 `MCD_MCP_CALCULATE_PRICE`。手工 `--quoted-total` 只标记为 `USER_REPORTED_TOTAL`，导入 JSON 中的验证标签不会被信任。商品、门店、优惠券、履约方式或预约时间任一变化，都必须重新核价。
 
 ## Demo 与真实模式隔离
 
@@ -62,7 +62,7 @@ calculate-price
 
 - 离线规划、Git 分析、SVG 生成及 MCP 协议客户端由自动化测试覆盖。
 - 官方 MCP 工具清单和流程依据官方 `M-China/mcd-mcp-server` 文档实现。
-- 提交比赛前必须使用已轮换的新 Token 执行 `python -m ship_a_big_mac mcp-tools`，并至少完成一次真实只读菜单查询与 `calculate-price` 核价；未完成前不得声称实时链路已验收。
+- 2026-10-15 已使用真实 Token 完成 6 个只读工具的联网验收，包含套餐默认选项及两套整单核价；详见 [LIVE_VALIDATION.md](LIVE_VALIDATION.md)。Token 未写入仓库。该记录不代表所有门店、履约方式及券组合都已测试。
 
 ## 业务价值
 

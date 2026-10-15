@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 import json
 from pathlib import Path
 import sys
@@ -17,6 +18,7 @@ from .planner import (
     yuan_to_cents,
 )
 from .render import write_receipt
+from .quote import quote_plan
 
 
 DEMO_MENU = Path(__file__).resolve().parent / "data" / "demo-menu.synthetic.json"
@@ -135,9 +137,8 @@ def _plan_from_dict(raw: dict[str, object]) -> FeastPlan:
         people=int(raw.get("people") or 1),
         budget_cents=int(raw.get("budget_cents") or 0),
         lines=lines,
-        quote_total_cents=int(raw.get("quote_total_cents") or 0),
-        quote_source=str(raw.get("quote_source") or "MENU_SUM_NOT_MCP_QUOTED"),
-        quote_id=str(raw["quote_id"]) if raw.get("quote_id") else None,
+        quote_total_cents=sum(line.subtotal_cents for line in lines),
+        quote_source="MENU_SUM_NOT_MCP_QUOTED",
     )
 
 
@@ -150,17 +151,26 @@ def cmd_receipt(args: argparse.Namespace) -> int:
         plans = plan_raw["plans"]
         if not isinstance(plans, list) or not plans:
             raise ValueError("plans array is empty")
+        if not 0 <= args.index < len(plans):
+            raise ValueError("plan index is out of range")
         plan_raw = plans[args.index]
     if not isinstance(plan_raw, dict):
         raise ValueError("selected plan must be a JSON object")
     context = _context_from_dict(context_raw)
     plan = _plan_from_dict(plan_raw)
-    if args.quoted_total is not None:
-        plan = apply_mcp_quote(
+    if getattr(args, "quote_arguments", None):
+        arguments = _load_json(args.quote_arguments)
+        if not isinstance(arguments, dict):
+            raise ValueError("quote arguments must be a JSON object")
+        with MCPClient() as client:
+            plan = quote_plan(client, plan, arguments)
+    elif args.quoted_total is not None:
+        reported = apply_mcp_quote(
             plan,
             total_cents=yuan_to_cents(args.quoted_total),
             quote_id=args.quote_id,
         )
+        plan = replace(reported, quote_source="USER_REPORTED_TOTAL")
     print(write_receipt(args.output, context, plan))
     return 0
 
@@ -231,7 +241,9 @@ def build_parser() -> argparse.ArgumentParser:
     receipt.add_argument("--context", required=True)
     receipt.add_argument("--plan", required=True)
     receipt.add_argument("--index", type=int, default=0)
-    receipt.add_argument("--quoted-total", help="verified calculate-price total in yuan")
+    quote_source = receipt.add_mutually_exclusive_group()
+    quote_source.add_argument("--quote-arguments", help="JSON file for a fresh official calculate-price call; items must match the selected plan")
+    quote_source.add_argument("--quoted-total", help="manually entered total in yuan; labeled USER REPORTED, never MCP VERIFIED")
     receipt.add_argument("--quote-id")
     receipt.add_argument("--output", default="release-receipt.svg")
     receipt.set_defaults(func=cmd_receipt)
@@ -259,6 +271,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> None:
+    # Keep piped Chinese output and currency symbols portable on Windows.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     try:
         args = build_parser().parse_args(argv)
         raise SystemExit(args.func(args))
