@@ -6,7 +6,13 @@
 
 **读取本地 Git Release 的规模，用麦当劳中国官方 MCP 的当前门店菜单和整单核价，生成团队庆功餐与可分享的 Release 小票。**
 
+[![tests](https://github.com/Ddongdongdong/ship-a-big-mac/actions/workflows/tests.yml/badge.svg)](https://github.com/Ddongdongdong/ship-a-big-mac/actions/workflows/tests.yml)
+[![release](https://img.shields.io/github/v/release/Ddongdongdong/ship-a-big-mac?color=ffdf59)](https://github.com/Ddongdongdong/ship-a-big-mac/releases/latest)
+[![stars](https://img.shields.io/github/stars/Ddongdongdong/ship-a-big-mac?style=social)](https://github.com/Ddongdongdong/ship-a-big-mac)
+
 [在线试玩](https://ddongdongdong.github.io/ship-a-big-mac/) · [30 秒 CLI Demo](#30-秒-demo无需-token) · [真实工作流](#真实工作流) · [安全边界](#安全边界) · [MCP 集成](MCP_INTEGRATION.md)
+
+如果你也觉得“发版值得一顿真正算清预算的庆功餐”，欢迎点一颗 ⭐；它会帮助这个开源作品进入麦当劳程序员创意开发大赛排行榜。
 
 </div>
 
