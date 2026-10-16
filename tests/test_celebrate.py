@@ -50,6 +50,25 @@ class CelebrateTests(unittest.TestCase):
         client.call_tool.side_effect = call
         return client
 
+    def _menu_client(self, meals, details=None, categories=None):
+        """Build a read-only MCP stub for menu-shape and filtering tests."""
+        client = Mock(url="https://mcp.mcd.cn")
+        names = ["query-meals", "query-meal-detail", "calculate-price"]
+        client.list_tools.return_value = [{"name": name, "inputSchema": {"type": "object"}} for name in names]
+        details = details or {}
+
+        def call(name, arguments):
+            if name == "query-meals":
+                return {"structuredContent": {"success": True, "code": 200, "data": {"meals": meals, "categories": categories or []}}}
+            if name == "query-meal-detail":
+                code = str(arguments["code"])
+                detail = details.get(code, {"code": code, "rounds": [{"id": "1", "choices": [{"isDefault": 1, "code": "main", "quantity": 1}]}]})
+                return {"structuredContent": {"success": True, "code": 200, "data": detail}}
+            raise AssertionError("unexpected tool: " + name)
+
+        client.call_tool.side_effect = call
+        return client
+
     def test_live_flow_reads_menu_defaults_and_quotes_before_writing(self):
         client = self._live_client()
         with tempfile.TemporaryDirectory() as folder:
@@ -76,6 +95,40 @@ class CelebrateTests(unittest.TestCase):
         for detail in ({}, {"rounds":[]}, {"rounds":[{"id":"1","choices":[{"isDefault":0,"code":"a","quantity":1}]}]}, {"rounds":[{"id":"1","choices":[{"isDefault":1,"code":"a","quantity":True}]}]}):
             with self.subTest(detail=detail), self.assertRaises(ValueError):
                 LivePickup.default_rounds(detail)
+
+    def test_renamed_combo_is_selected_without_fixed_product_names(self):
+        client = self._menu_client({"NEW": {"name": "新品牛肉套餐", "currentPrice": "35.00"}})
+        menu, options, count = LivePickup(client).menu({"storeCode": "S", "beType": 1, "orderType": 1})
+        self.assertEqual(count, 1)
+        self.assertEqual([item.code for item in menu], ["NEW"])
+        self.assertIn("NEW", options)
+
+    def test_menu_skips_product_with_unverifiable_defaults(self):
+        client = self._menu_client(
+            {
+                "BAD": {"name": "新品套餐", "currentPrice": "35.00"},
+                "GOOD": {"name": "另一款套餐", "currentPrice": "36.00"},
+            },
+            details={"BAD": {"code": "BAD", "rounds": []}},
+        )
+        menu, _, _ = LivePickup(client).menu({"storeCode": "S", "beType": 1, "orderType": 1})
+        self.assertEqual([item.code for item in menu], ["GOOD"])
+
+    def test_drinks_only_menu_cannot_cover_people(self):
+        client = self._menu_client({"DRINK": {"name": "冰可乐", "currentPrice": "9.00"}})
+        with self.assertRaisesRegex(ValueError, "没有可验证"):
+            LivePickup(client).menu({"storeCode": "S", "beType": 1, "orderType": 1})
+
+    def test_unorderable_and_unpriced_items_are_filtered(self):
+        client = self._menu_client(
+            {
+                "NO_ORDER": {"name": "隐藏套餐", "currentPrice": "30.00", "canWithOrder": False},
+                "NO_PRICE": {"name": "缺价套餐", "currentPrice": None},
+                "GOOD": {"name": "上新套餐", "currentPrice": "32.00", "canWithOrder": True},
+            }
+        )
+        menu, _, _ = LivePickup(client).menu({"storeCode": "S", "beType": 1, "orderType": 1})
+        self.assertEqual([item.code for item in menu], ["GOOD"])
 
 
 if __name__ == "__main__":

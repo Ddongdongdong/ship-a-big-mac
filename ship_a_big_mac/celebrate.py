@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import sys
 import webbrowser
+from collections import defaultdict
 
 from .actions import require_success, validate_arguments
 from .git_release import ReleaseContext, analyze_repository
@@ -38,6 +39,19 @@ def _choose(label: str, count: int, interactive: bool, default: int = 1) -> int:
         if not interactive:
             raise ValueError("choice is out of range")
         print(f"请输入 1–{count}。")
+
+
+def _recommended_scene(context: ReleaseContext) -> str:
+    """Map an observed release intensity to a suggested celebration scene.
+
+    This is a recommendation only. An explicit ``--scene`` always wins and
+    the mapping never changes the user's people count or budget.
+    """
+    if context.intensity == "hotfix":
+        return "hotfix"
+    if context.intensity == "major":
+        return "major"
+    return "sprint"
 
 
 class LivePickup:
@@ -88,16 +102,100 @@ class LivePickup:
             result.append({"round": str(group["id"]), "comboItemList": selected})
         return result
 
+    @staticmethod
+    def _category_hints(raw: dict) -> dict[str, set[str]]:
+        """Collect category and tag hints for each product code.
+
+        ``query-meals`` exposes product metadata in two places: the ``meals``
+        map contains the price and display name, while ``categories`` carries
+        the category name and product tags.  The API has changed the shape of
+        the latter a few times, so malformed entries are ignored rather than
+        making the whole menu unusable.
+        """
+        hints: dict[str, set[str]] = defaultdict(set)
+        categories = raw.get("categories") if isinstance(raw, dict) else None
+        if not isinstance(categories, list):
+            return hints
+        for category in categories:
+            if not isinstance(category, dict):
+                continue
+            category_name = category.get("name")
+            products = category.get("meals")
+            if not isinstance(products, list):
+                continue
+            for product in products:
+                if not isinstance(product, dict) or product.get("code") is None:
+                    continue
+                code = str(product["code"])
+                if isinstance(category_name, str):
+                    hints[code].add(category_name)
+                tags = product.get("tags")
+                if isinstance(tags, (list, tuple, set)):
+                    hints[code].update(str(tag) for tag in tags if tag is not None)
+        return hints
+
+    @staticmethod
+    def _is_coverage_item(item: dict, hints: set[str]) -> bool:
+        """Return whether a live product can represent one person's main meal.
+
+        The planner must not turn a drink, dessert or side into a person's
+        meal.  There is no stable product-type field in every MCP response, so
+        we use explicit API metadata when present and conservative category/
+        name tags as a fallback.  A valid ``rounds`` payload is checked
+        separately by :meth:`default_rounds` and is what makes the item
+        orderable in this workflow.
+        """
+        for key in ("role", "type", "productType", "mealType", "category"):
+            value = item.get(key)
+            if isinstance(value, str) and value.lower() in {"side", "drink", "dessert", "beverage", "snack"}:
+                return False
+        text = " ".join(
+            str(value).strip().lower()
+            for value in [
+                item.get("name"),
+                item.get("role"),
+                item.get("type"),
+                item.get("productType"),
+                item.get("mealType"),
+                item.get("category"),
+                *sorted(hints),
+            ]
+            if value is not None
+        )
+        # Keep this list deliberately conservative.  Unknown/new product
+        # names remain eligible once their default combo rounds are verified.
+        non_meal_terms = (
+            "饮料", "饮品", "可乐", "雪碧", "果汁", "咖啡", "奶茶", "茶饮", "汽水",
+            "纯牛奶", "苏打水", "矿泉水", "drink", "beverage", "coffee", "juice", "tea",
+            "甜品", "甜点", "甜筒", "冰淇淋", "麦旋风", "圣代", "蛋挞", "派", "dessert", "ice cream",
+            "小食", "配餐", "薯条", "鸡块", "玉米杯", "沙拉", "snack", "side",
+        )
+        return not any(term in text for term in non_meal_terms)
+
     def menu(self, shared: dict) -> tuple[list[MenuItem], dict[str, list[dict]], int]:
         raw = self.call("query-meals", shared)
         meals = raw.get("meals") if isinstance(raw, dict) else None
         if not isinstance(meals, dict):
             raise MCPError("menu response has no meals map")
-        # These single-person combos have explicit portion semantics. Resolve all
-        # codes/prices from this live store; never guess numeric product codes.
-        preferred = ("巨无霸三件套", "麦辣鸡腿汉堡三件套", "双层吉士汉堡套餐", "板烧鸡腿堡套餐", "麦香鱼套餐", "麦香鸡套餐")
-        candidates = [(str(code), item) for code, item in meals.items() if isinstance(item, dict) and item.get("name") in preferred]
-        candidates.sort(key=lambda pair: preferred.index(pair[1]["name"]))
+        # Product names are display data, not a compatibility contract.  Use
+        # the live category/tags metadata and verify each product's default
+        # rounds instead of maintaining a hard-coded list of meal names.
+        hints_by_code = self._category_hints(raw)
+        candidates = []
+        for code, item in meals.items():
+            if not isinstance(item, dict) or not code:
+                continue
+            if item.get("canWithOrder") in (False, 0, "0", "false", "False"):
+                continue
+            if any(item.get(key) in (False, 0, "0", "false", "False") for key in ("available", "isAvailable")):
+                continue
+            if not isinstance(item.get("name"), str) or not item["name"].strip():
+                continue
+            if not self._is_coverage_item(item, hints_by_code.get(str(code), set())):
+                continue
+            candidates.append((str(code), item))
+        # Preserve the menu's order (usually the restaurant's merchandising
+        # order) so the resulting suggestions remain stable and understandable.
         menu, options = [], {}
         for code, item in candidates:
             try:
@@ -105,11 +203,14 @@ class LivePickup:
                 if price <= 0:
                     continue
                 detail = self.call("query-meal-detail", {**shared, "code": code})
-                if not isinstance(detail, dict) or detail.get("code") != code:
+                if not isinstance(detail, dict):
+                    raise ValueError("meal detail does not match menu product")
+                detail_code = detail.get("code") or detail.get("productCode")
+                if detail_code is not None and str(detail_code) != code:
                     raise ValueError("meal detail does not match menu product")
                 rounds = self.default_rounds(detail)
-            except (ValueError, KeyError, MCPError):
-                print(f"  跳过需手动核对组成的套餐：{item['name']}")
+            except (ValueError, KeyError, TypeError, ArithmeticError, MCPError):
+                print(f"  跳过无法验证默认组成的餐品：{item['name']}")
                 continue
             menu.append(MenuItem(code, item["name"], price, serves=1, role="combo", tags=(item["name"],)))
             options[code] = rounds
@@ -117,12 +218,60 @@ class LivePickup:
             raise ValueError("当前门店没有可验证默认组成的支持套餐；请换门店，或使用 Skill 自选餐品。")
         return menu, options, len(meals)
 
+    @staticmethod
+    def _coupon_candidates(raw: object, shared: dict, schema: dict) -> list[tuple[str, dict, str, str | None]]:
+        """Return coupons that can be bound to the live quote schema safely.
+
+        The server has used several names for the coupon collection and ID.
+        Unknown shapes are deliberately ignored instead of sending guessed
+        fields to ``calculate-price``.
+        """
+        if isinstance(raw, dict):
+            values = raw.get("coupons") or raw.get("couponList") or raw.get("list")
+        else:
+            values = raw
+        if not isinstance(values, list):
+            return []
+        properties = schema.get("properties", {}) if isinstance(schema, dict) else {}
+        item_schema = properties.get("items", {}) if isinstance(properties.get("items"), dict) else {}
+        item_schema = item_schema.get("items", {}) if isinstance(item_schema, dict) else {}
+        item_properties = item_schema.get("properties", {}) if isinstance(item_schema, dict) else {}
+        result = []
+        for coupon in values:
+            if not isinstance(coupon, dict) or coupon.get("canUse") is False or coupon.get("available") is False:
+                continue
+            identifier = next((coupon.get(key) for key in ("couponId", "couponCode", "id", "code") if isinstance(coupon.get(key), str) and coupon.get(key)), None)
+            if not identifier:
+                continue
+            stores = coupon.get("storeCodes") or coupon.get("stores")
+            if isinstance(stores, list) and str(shared.get("storeCode")) not in {str(value) for value in stores}:
+                continue
+            if isinstance(coupon.get("storeCode"), str) and coupon["storeCode"] != str(shared.get("storeCode")):
+                continue
+            bound = dict(shared)
+            item_key = None
+            if "couponId" in properties:
+                bound["couponId"] = identifier
+            elif "couponCode" in properties:
+                bound["couponCode"] = identifier
+            elif "couponId" in item_properties:
+                item_key = "couponId"
+            elif "couponCode" in item_properties:
+                item_key = "couponCode"
+            else:
+                continue
+            label = str(coupon.get("name") or identifier)
+            result.append((label, bound, str(identifier), item_key))
+        return result
+
     def candidates(self, shared: dict, people: int, budget: int) -> list[FeastPlan]:
         menu, options, count = self.menu(shared)
         print(f"菜单共 {count} 项，本次从 {len(menu)} 款单人套餐生成候选（默认组成）。")
+        coupon_options = []
         try:
-            self.call("query-store-coupons", shared)
-            print("已查询门店优惠；本流程不自动套券，不宣称全局最低价。")
+            coupon_raw = self.call("query-store-coupons", shared)
+            coupon_options = self._coupon_candidates(coupon_raw, shared, self.schemas.get("calculate-price", {}))
+            print(f"已查询门店优惠；当前返回中有 {len(coupon_options)} 张可验证券，逐一比较核价。")
         except MCPError:
             print("门店优惠查询暂不可用，继续核价无券候选。")
         candidates = plan_feasts(menu, people=people, budget_cents=budget)
@@ -132,14 +281,26 @@ class LivePickup:
             if item.price_cents * people <= budget:
                 candidates.append(FeastPlan("单品备选", people, budget, (PlanLine(item.code, item.name, people, item.price_cents, 1, "combo"),), item.price_cents * people, "MENU_SUM_NOT_MCP_QUOTED"))
         verified, seen = [], set()
-        for plan in candidates:
-            signature = tuple(sorted((line.code, line.quantity) for line in plan.lines))
+        quote_variants = [(plan, None) for plan in candidates]
+        for label, bound, identifier, item_key in coupon_options:
+            for plan in candidates:
+                quote_variants.append((plan, (label, bound, identifier, item_key)))
+        for plan, coupon in quote_variants:
+            coupon_label = coupon[0] if coupon else ""
+            signature = tuple(sorted((line.code, line.quantity) for line in plan.lines)) + ((coupon_label,),)
             if signature in seen:
                 continue
             seen.add(signature)
-            arguments = {**shared, "items": [{"productCode": line.code, "quantity": line.quantity, "roundList": options[line.code]} for line in plan.lines]}
+            arguments = {**(coupon[1] if coupon else shared), "items": [{"productCode": line.code, "quantity": line.quantity, "roundList": options[line.code]} for line in plan.lines]}
+            if coupon and coupon[3] in {"couponId", "couponCode"}:
+                for item in arguments["items"]:
+                    item[coupon[3]] = coupon[2]
+            if coupon:
+                quoted_plan = replace(plan, strategy=f"{coupon_label} · {plan.strategy}")
+            else:
+                quoted_plan = plan
             validate_arguments(arguments, self.schemas.get("calculate-price", {}))
-            bound = bind_quote_context(plan, arguments, self.client.url)
+            bound = bind_quote_context(quoted_plan, arguments, self.client.url)
             try:
                 quoted = quote_plan(self.client, bound, arguments)
             except MCPError as error:
@@ -174,9 +335,14 @@ def cmd_celebrate(args) -> int:
     scene = args.scene
     if not scene:
         keys = list(THEMES)
+        recommended = _recommended_scene(context)
         for i, key in enumerate(keys, 1):
-            print(f"  {i}. {THEMES[key]['name']} ({key})")
-        scene = keys[_choose("选择庆祝主题", len(keys), interactive)]
+            marker = " · Git Release 建议" if key == recommended else ""
+            print(f"  {i}. {THEMES[key]['name']} ({key}){marker}")
+        if interactive:
+            scene = keys[_choose("选择庆祝主题", len(keys), interactive, keys.index(recommended) + 1)]
+        else:
+            scene = recommended
     theme = get_theme(scene)
     people = args.people if args.people is not None else int(_ask("这顿几个人", "5" if args.demo else str(max(1, context.contributor_count)), interactive))
     budget = yuan_to_cents(args.budget if args.budget is not None else _ask("总预算 / 元", str(people * 36), interactive))
