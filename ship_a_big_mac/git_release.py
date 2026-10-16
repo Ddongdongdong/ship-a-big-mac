@@ -6,6 +6,7 @@ from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 import hashlib
+import re
 import subprocess
 from typing import Optional
 
@@ -98,6 +99,20 @@ def _range_change_stats(path: Path, from_commit: str, to_commit: str) -> tuple[i
     return len(files), insertions, deletions
 
 
+def _range_intensity(from_ref: str, to_ref: str, weight: int) -> str:
+    """Classify a tagged release without letting commit volume set the theme."""
+    pattern = re.compile(r"^[vV]?(\d+)\.(\d+)\.(\d+)")
+    before, after = pattern.match(from_ref), pattern.match(to_ref)
+    if before and after:
+        old = tuple(int(value) for value in before.groups())
+        new = tuple(int(value) for value in after.groups())
+        if new[0] == old[0] and new[1] == old[1] and new[2] > old[2]:
+            return "hotfix"
+        if new[:2] != old[:2]:
+            return "major"
+    return "hotfix" if weight <= 4 else "regular" if weight <= 18 else "major"
+
+
 def analyze_repository(
     path: str | Path = ".",
     *,
@@ -148,7 +163,7 @@ def analyze_repository(
 
     commits = len(identities)
     weight = commits + files // 2 + (insertions + deletions) // 250
-    intensity = "hotfix" if weight <= 4 else "regular" if weight <= 18 else "major"
+    intensity = _range_intensity(from_tag, to_ref, weight) if from_tag and to_ref else ("hotfix" if weight <= 4 else "regular" if weight <= 18 else "major")
     return ReleaseContext(
         repository=root.name,
         branch=branch,

@@ -82,6 +82,7 @@ class GitReleaseTests(unittest.TestCase):
             next_context = analyze_repository(repo, from_tag="v1.1.0", to_ref="v1.1.1")
             self.assertEqual(next_context.commit_count, 1)
             self.assertEqual(next_context.files_changed, 1)
+            self.assertEqual(next_context.intensity, "hotfix")
 
     def test_release_range_requires_both_refs_and_validates_unknown_ref(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

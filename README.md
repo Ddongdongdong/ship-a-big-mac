@@ -75,11 +75,11 @@ ship-a-big-mac celebrate
 
 首版一键流程支持到店取餐，默认套餐组成。菜单价可能与整单核价不同；超预算或核价失败的候选会被淘汰。不会自动创建订单。优惠券会查询，但不会声称遍历了所有优惠组合。
 
-`ship-a-big-mac celebrate --help` 查看参数，[一键庆祝指南](references/celebrate.md) 列出脚本用法、默认选择和当前支持的套餐范围。外送、定制套餐选项与个性化约束可使用 [Skill 工作流](SKILL.md) 和现有底层命令；一键流程暂不提供逐人口味分餐与过敏原保证。
+`ship-a-big-mac celebrate --help` 查看参数。要让卡片对应两个真实版本之间的差异，可传 `--from-tag v2.4.0 --to-ref v2.4.1`；没有 Tag 时才使用 `--days` 的最近时间窗口回退。[一键庆祝指南](references/celebrate.md) 列出脚本用法和菜单验证边界。外送、定制套餐选项与个性化约束可使用 [Skill 工作流](SKILL.md) 和现有底层命令；一键流程暂不提供逐人口味分餐与过敏原保证。
 
 Token 只从本机环境变量读取，不写进仓库、截图或分享卡。MCP 只接收点餐参数，本地源码、提交标题和作者邮箱不上传。
 
-## 功能不止庆功餐
+## Advanced：其他 MCP 能力
 
 保留官方 MCP 的 **35 个工具入口**：28 个查询、7 个需要确认的账户操作。普通查询不要求你有 Git 仓库。
 
@@ -95,7 +95,7 @@ ship-a-big-mac orders            # 历史订单
 ship-a-big-mac addresses         # 配送地址
 ```
 
-领券、积分兑换、下单等操作先通过 `mcp-action` 查看具体预览，再用匹配的确认码执行。下单前重新核价，价格或参数变化会使原确认失效。[完整功能和参数指南](references/capabilities.md) · [MCP 接入说明](MCP_INTEGRATION.md) · [配置示例](mcp-config.example.json)。
+领券、积分兑换、下单等操作先通过 `mcp-action` 查看具体预览，再用匹配的确认码执行。确认码约 5 分钟有效，只能执行一次；下单前重新核价，价格或参数变化会使原确认失效。网络超时后先查询订单状态，不自动重试。[完整功能和参数指南](references/capabilities.md) · [MCP 接入说明](MCP_INTEGRATION.md) · [配置示例](mcp-config.example.json)。
 
 ## 金额有依据，分享有边界
 

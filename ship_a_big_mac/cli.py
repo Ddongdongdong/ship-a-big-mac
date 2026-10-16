@@ -20,7 +20,7 @@ from .planner import (
 from .render import write_receipt
 from .quote import quote_plan
 from .catalog import CAPABILITY_GROUPS, READ_ONLY_MCP_TOOLS, WRITE_MCP_TOOLS
-from .actions import execute_action, prepare_action, require_success
+from .actions import execute_action, load_preview, prepare_action, require_success
 from .celebrate import add_celebrate_parser
 
 
@@ -238,6 +238,14 @@ def cmd_mcp_action(args: argparse.Namespace) -> int:
             print(json.dumps(preview, ensure_ascii=False, indent=2))
             print("尚未执行。核对操作内容后，使用相同参数和 --confirm <confirmation_code> 执行一次。")
             return 0
+        # Reuse the exact preview printed by an earlier invocation when it is
+        # available. This preserves its issue time and gives the five-minute
+        # expiry meaning across separate CLI processes.
+        saved = load_preview(args.confirm)
+        if saved is not None:
+            if saved.get("tool") != args.tool or saved.get("arguments") != arguments:
+                raise ValueError("confirmation does not match the requested tool or arguments")
+            preview = saved
         result = execute_action(client, preview, args.confirm)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0

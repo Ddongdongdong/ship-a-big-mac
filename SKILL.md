@@ -15,7 +15,7 @@ For nutrition, activities, coupons, points, delivery addresses, orders, lottery,
 
 For the guided pickup workflow, run `python -m ship_a_big_mac celebrate`. It gathers missing inputs, reads Git locally, selects a store, builds candidates from live menu details, and quotes each candidate. Use `--demo` for an offline preview and `--help` for scriptable options. This produces a receipt, an achievement SVG and a local HTML preview with PNG export. Let the user choose `major`, `hotfix`, `sprint` or `comeback`; commit volume does not decide the theme or how much the team should eat. Individual dietary constraints need a separate verified assignment workflow; the nominal serving count is not an allergy or nutrition guarantee.
 
-Read [references/celebrate.md](references/celebrate.md) for scripted celebration inputs, output files and the supported live combo subset.
+Read [references/celebrate.md](references/celebrate.md) for scripted celebration inputs, release-range arguments, output files and live menu/coupon verification boundaries.
 
 For delivery, custom meal selection or a workflow requiring more control:
 
@@ -33,6 +33,6 @@ For delivery, custom meal selection or a workflow requiring more control:
 - Never infer product codes, coupon IDs, prices, availability, store capabilities, or fulfillment codes.
 - Re-run `calculate-price` if the items, store, coupon, fulfillment mode, or appointment time changes.
 - Reject quotes over the user's budget and revise the candidate; menu discounts may not apply to the whole order. Describe the budget strategy as minimum menu cost within the selected menu, not a global coupon optimum.
-- Release planning does not create orders. For requested account changes, use `mcp-action` to preview the concrete operation and execute only when that operation and its effects are authorized. A generated confirmation code is not user authorization. Creating an order re-quotes before execution and rejects a changed price.
+- Release planning does not create orders. For requested account changes, use `mcp-action` to preview the concrete operation and execute only when that operation and its effects are authorized. A generated confirmation code is not user authorization; it expires after about five minutes and is single-use. Creating an order re-quotes before execution and rejects a changed price. A timeout is an unknown outcome: query the order before any follow-up.
 - Do not place MCP tokens in arguments, generated files, logs, screenshots, or repository content.
 - If a hard constraint cannot be verified, label it unresolved rather than silently relaxing it.

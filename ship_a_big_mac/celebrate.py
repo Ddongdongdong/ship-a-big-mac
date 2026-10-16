@@ -114,13 +114,15 @@ class LivePickup:
         """
         hints: dict[str, set[str]] = defaultdict(set)
         categories = raw.get("categories") if isinstance(raw, dict) else None
+        if isinstance(categories, dict):
+            categories = categories.get("list") or categories.get("items")
         if not isinstance(categories, list):
             return hints
         for category in categories:
             if not isinstance(category, dict):
                 continue
             category_name = category.get("name")
-            products = category.get("meals")
+            products = category.get("meals") or category.get("products") or category.get("items")
             if not isinstance(products, list):
                 continue
             for product in products:
@@ -228,6 +230,9 @@ class LivePickup:
         """
         if isinstance(raw, dict):
             values = raw.get("coupons") or raw.get("couponList") or raw.get("list")
+            if values is None and isinstance(raw.get("data"), dict):
+                nested = raw["data"]
+                values = nested.get("coupons") or nested.get("couponList") or nested.get("list")
         else:
             values = raw
         if not isinstance(values, list):
@@ -309,6 +314,8 @@ class LivePickup:
             verified.append(quoted)
         if not verified:
             raise ValueError("没有候选通过本次官方核价与预算检查；请增加预算或更换门店。")
+        verified.sort(key=lambda candidate: (candidate.quote_total_cents, candidate.strategy))
+        print("已按本次返回且可验证的无券/优惠券候选比较最终核价；最低项不代表全局最优。")
         return verified
 
 

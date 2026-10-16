@@ -130,6 +130,30 @@ class CelebrateTests(unittest.TestCase):
         menu, _, _ = LivePickup(client).menu({"storeCode": "S", "beType": 1, "orderType": 1})
         self.assertEqual([item.code for item in menu], ["GOOD"])
 
+    def test_verifiable_store_coupon_is_compared_by_final_quote(self):
+        client = Mock(url="https://mcp.mcd.cn")
+        client.list_tools.return_value = [
+            {"name": "query-meals", "inputSchema": {"type": "object"}},
+            {"name": "query-meal-detail", "inputSchema": {"type": "object"}},
+            {"name": "query-store-coupons", "inputSchema": {"type": "object"}},
+            {"name": "calculate-price", "inputSchema": {"type": "object", "properties": {"couponId": {"type": "string"}, "items": {"type": "array"}}}},
+        ]
+        def call(name, arguments):
+            if name == "query-meals":
+                data = {"meals": {"A": {"name": "新品套餐", "currentPrice": "35.00"}}}
+            elif name == "query-meal-detail":
+                data = {"code": "A", "rounds": [{"id": "1", "choices": [{"isDefault": 1, "code": "main", "quantity": 1}]}]}
+            elif name == "query-store-coupons":
+                data = {"coupons": [{"couponId": "C1", "name": "门店立减券", "storeCode": "S"}]}
+            else:
+                data = {"price": 2500 if arguments.get("couponId") == "C1" else 3500, "productList": [{"productCode": "A", "quantity": 1}]}
+            return {"structuredContent": {"success": True, "code": 200, "data": data}}
+        client.call_tool.side_effect = call
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            plans = LivePickup(client).candidates({"storeCode": "S", "beType": 1, "orderType": 1}, 1, 4000)
+        self.assertTrue(any("门店立减券" in plan.strategy and plan.quote_total_cents == 2500 for plan in plans))
+        self.assertIn("可验证券", output.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

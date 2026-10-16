@@ -65,6 +65,19 @@ class ActionTests(unittest.TestCase):
             execute_action(self.client, preview, preview["confirmation_code"])
         self.assertEqual(self.client.call_tool.call_count, 1)
 
+    def test_confirmation_expires(self):
+        preview = prepare_action(self.client, "cancel-order", {"orderId": "expiring", "cancelReasonCode": "1"}, "https://mcp.mcd.cn", now=1000)
+        with self.assertRaisesRegex(ValueError, "expired"):
+            execute_action(self.client, preview, preview["confirmation_code"], now=1000 + 301)
+        self.client.call_tool.assert_not_called()
+
+    def test_confirmation_is_one_time(self):
+        preview = prepare_action(self.client, "cancel-order", {"orderId": "once", "cancelReasonCode": "1"}, "https://mcp.mcd.cn", now=2000)
+        execute_action(self.client, preview, preview["confirmation_code"], now=2001)
+        with self.assertRaisesRegex(ValueError, "already been used"):
+            execute_action(self.client, preview, preview["confirmation_code"], now=2002)
+        self.assertEqual(self.client.call_tool.call_count, 1)
+
     def test_business_failure_not_presented_as_success(self):
         with self.assertRaises(MCPError):
             require_success({"isError": False, "structuredContent": {"success": False, "code": 500}}, "mall-create-order")
@@ -96,6 +109,16 @@ class ActionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             execute_action(self.client, after, before["confirmation_code"])
         self.client.call_tool.assert_not_called()
+
+    def test_order_execution_requotes_and_rejects_price_change(self):
+        preview = self.order_preview(3000)
+        # The preview quote was 3000; the execution-time quote changes to 3500.
+        self.client.call_tool.reset_mock()
+        self.client.call_tool.return_value = {"structuredContent": {"success": True, "code": 200, "data": {"price": 3500, "productList": [{"productCode": "A", "quantity": 1}], "takeWayList": [{"code": "pickup"}]}}}
+        with self.assertRaisesRegex(ValueError, "price changed"):
+            execute_action(self.client, preview, preview["confirmation_code"])
+        self.assertEqual(self.client.call_tool.call_count, 1)
+        self.assertEqual(self.client.call_tool.call_args.args[0], "calculate-price")
 
 
 if __name__ == "__main__":
