@@ -161,7 +161,12 @@ def _show_plans(plans: list[FeastPlan]) -> None:
 def cmd_celebrate(args) -> int:
     interactive = sys.stdin.isatty() and not args.non_interactive
     print("\nSHIP A BIG MAC · 代码已上线，汉堡安排上。\n")
-    context = analyze_repository(args.repo, since_days=args.days)
+    context = analyze_repository(
+        args.repo,
+        since_days=args.days,
+        from_tag=args.from_tag,
+        to_ref=args.to_ref,
+    )
     if args.version:
         context = replace(context, version=args.version)
     print(f"本地 Release：{context.repository} / {context.version}")
@@ -227,6 +232,8 @@ def add_celebrate_parser(sub) -> None:
     parser.add_argument("--demo", action="store_true", help="use synthetic menu prices without network access")
     parser.add_argument("--repo", default=".")
     parser.add_argument("--days", type=int, default=14)
+    parser.add_argument("--from-tag", help="analyze the release range after this tag")
+    parser.add_argument("--to-ref", help="release endpoint ref (tag, branch, or commit)")
     parser.add_argument("--version", help="release label displayed on the card")
     parser.add_argument("--scene", choices=list(THEMES))
     parser.add_argument("--people", type=int)

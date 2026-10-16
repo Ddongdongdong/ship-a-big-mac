@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 import hashlib
 import subprocess
+from typing import Optional
 
 
 class GitAnalysisError(RuntimeError):
@@ -26,6 +27,8 @@ class ReleaseContext:
     deletions: int
     intensity: str
     window_days: int
+    from_ref: str = ""
+    to_ref: str = ""
 
     def to_dict(self) -> dict[str, object]:
         data = asdict(self)
@@ -69,15 +72,45 @@ def _change_stats(path: Path, since_days: int) -> tuple[int, int, int]:
     return len(files), insertions, deletions
 
 
+def _resolve_commit(path: Path, ref: str) -> str:
+    """Resolve a user supplied ref to a commit without interpreting it as an option."""
+    commit = _git(path, "rev-parse", "--verify", "--end-of-options", f"{ref}^{{commit}}", check=False)
+    if not commit:
+        raise GitAnalysisError(f"Git ref does not resolve to a commit: {ref}")
+    return commit
+
+
+def _range_change_stats(path: Path, from_commit: str, to_commit: str) -> tuple[int, int, int]:
+    """Measure the net file changes between the release boundary commits."""
+    output = _git(path, "diff", "--numstat", from_commit, to_commit)
+    files: set[str] = set()
+    insertions = deletions = 0
+    for line in output.splitlines():
+        parts = line.split("\t", 2)
+        if len(parts) != 3:
+            continue
+        added, removed, filename = parts
+        files.add(filename)
+        if added.isdigit():
+            insertions += int(added)
+        if removed.isdigit():
+            deletions += int(removed)
+    return len(files), insertions, deletions
+
+
 def analyze_repository(
     path: str | Path = ".",
     *,
     since_days: int = 14,
     include_names: bool = False,
+    from_tag: Optional[str] = None,
+    to_ref: Optional[str] = None,
 ) -> ReleaseContext:
     repo = Path(path).expanduser().resolve()
     if since_days < 1 or since_days > 365:
         raise ValueError("since_days must be between 1 and 365")
+    if bool(from_tag) != bool(to_ref):
+        raise ValueError("from_tag and to_ref must be provided together")
     root = Path(_git(repo, "rev-parse", "--show-toplevel"))
     branch = _git(root, "branch", "--show-current", check=False) or "detached"
     has_head = bool(_git(root, "rev-parse", "--verify", "HEAD", check=False))
@@ -85,13 +118,26 @@ def analyze_repository(
     if not version:
         version = _git(root, "rev-parse", "--short", "HEAD") if has_head else "unreleased"
 
-    raw_authors = _git(
-        root,
-        "log",
-        f"--since={since_days}.days",
-        "--format=%an%x1f%ae",
-        check=False,
-    ).splitlines()
+    if from_tag and to_ref:
+        from_commit = _resolve_commit(root, from_tag)
+        to_commit = _resolve_commit(root, to_ref)
+        raw_authors = _git(
+            root,
+            "log",
+            f"{from_commit}..{to_commit}",
+            "--format=%an%x1f%ae",
+        ).splitlines()
+        files, insertions, deletions = _range_change_stats(root, from_commit, to_commit)
+        version = to_ref
+    else:
+        raw_authors = _git(
+            root,
+            "log",
+            f"--since={since_days}.days",
+            "--format=%an%x1f%ae",
+            check=False,
+        ).splitlines()
+        files, insertions, deletions = _change_stats(root, since_days)
     identities = [line for line in raw_authors if line]
     counts = Counter(identities)
     ordered = [identity for identity, _ in counts.most_common()]
@@ -100,7 +146,6 @@ def analyze_repository(
     else:
         contributors = tuple(_private_label(identity, i + 1) for i, identity in enumerate(ordered))
 
-    files, insertions, deletions = _change_stats(root, since_days)
     commits = len(identities)
     weight = commits + files // 2 + (insertions + deletions) // 250
     intensity = "hotfix" if weight <= 4 else "regular" if weight <= 18 else "major"
@@ -116,4 +161,6 @@ def analyze_repository(
         deletions=deletions,
         intensity=intensity,
         window_days=since_days,
+        from_ref=from_tag or "",
+        to_ref=to_ref or "",
     )

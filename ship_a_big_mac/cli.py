@@ -51,6 +51,8 @@ def _context_from_dict(raw: dict[str, object]) -> ReleaseContext:
         deletions=int(raw["deletions"]),
         intensity=str(raw["intensity"]),
         window_days=int(raw["window_days"]),
+        from_ref=str(raw.get("from_ref") or ""),
+        to_ref=str(raw.get("to_ref") or ""),
     )
 
 
@@ -88,7 +90,13 @@ def cmd_demo(args: argparse.Namespace) -> int:
 
 
 def cmd_analyze(args: argparse.Namespace) -> int:
-    context = analyze_repository(args.repo, since_days=args.days, include_names=args.include_names)
+    context = analyze_repository(
+        args.repo,
+        since_days=args.days,
+        include_names=args.include_names,
+        from_tag=args.from_tag,
+        to_ref=args.to_ref,
+    )
     text = json.dumps(context.to_dict(), ensure_ascii=False, indent=2)
     if args.output:
         Path(args.output).write_text(text + "\n", encoding="utf-8")
@@ -249,6 +257,8 @@ def build_parser() -> argparse.ArgumentParser:
     analyze = sub.add_parser("analyze", help="analyze local Git release activity")
     analyze.add_argument("--repo", default=".")
     analyze.add_argument("--days", type=int, default=14)
+    analyze.add_argument("--from-tag", help="analyze changes after this release tag")
+    analyze.add_argument("--to-ref", help="end ref for the release range (tag, branch, or commit)")
     analyze.add_argument("--include-names", action="store_true")
     analyze.add_argument("--output")
     analyze.set_defaults(func=cmd_analyze)
